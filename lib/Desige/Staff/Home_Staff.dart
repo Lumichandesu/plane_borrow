@@ -1,0 +1,68 @@
+import 'package:flutter/material.dart';
+import 'package:plane_borrow/Desige/Staff/Listplane_staff.dart';
+import 'History_staff.dart';
+import 'dashboard_staff.dart';
+import 'Return_staff.dart';
+
+class HomeStaff extends StatefulWidget {
+  const HomeStaff({super.key});
+
+  @override
+  State<HomeStaff> createState() => _AppbarstudentState();
+}
+
+class _AppbarstudentState extends State<HomeStaff> {
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 4,
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          title: const Center(
+            child: Text(
+              'SkyChauffeur',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+          backgroundColor: Colors.black,
+        ),
+        bottomNavigationBar: Container(
+          color: Colors.black,
+          child: const TabBar(
+            labelColor:
+                Color.fromARGB(255, 251, 96, 85), // สีของข้อความที่ถูกเลือก
+            unselectedLabelColor: Colors.white, // สีของข้อความที่ไม่ได้ถูกเลือก
+            labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            tabs: [
+              Tab(
+                icon: Icon(Icons.home),
+                text: 'Home',
+              ),
+              Tab(
+                icon: Icon(Icons.u_turn_left_rounded),
+                text: 'Return',
+              ),
+              Tab(
+                icon: Icon(Icons.dashboard),
+                text: 'Dashbord',
+              ),
+              Tab(
+                icon: Icon(Icons.watch_later_rounded),
+                text: 'History',
+              ),
+            ],
+          ),
+        ),
+        body: const TabBarView(
+          children: [
+            ListplaneStaff(),
+            ReturnStaff(),
+            Dashboardstaff(),
+            HistoryStaff()
+          ],
+        ),
+      ),
+    );
+  }
+}
