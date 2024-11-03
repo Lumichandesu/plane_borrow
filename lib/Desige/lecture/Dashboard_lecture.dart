@@ -1,99 +1,107 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
-class DashboardLecture extends StatelessWidget {
+class DashboardLecture extends StatefulWidget {
   const DashboardLecture({super.key});
 
   @override
+  _DashboardLectureState createState() => _DashboardLectureState();
+}
+
+class _DashboardLectureState extends State<DashboardLecture> {
+  int borrowedCount = 0;
+  int availableCount = 0;
+  int disabledCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAssetTotals();
+  }
+
+  Future<void> _fetchAssetTotals() async {
+    // Make sure to use your local IP address here if needed
+    final response = await http.get(Uri.parse('http://localhost:3000/asset-status'));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      print('Fetched data: $data');  // Log the fetched data
+
+      setState(() {
+        borrowedCount = int.parse(data['borrowed_assets'] ?? '0'); // Ensure it's an integer
+        availableCount = int.parse(data['available_assets'] ?? '0'); // Ensure it's an integer
+        disabledCount = int.parse(data['disabled_assets'] ?? '0'); // Ensure it's an integer
+      });
+    } else {
+      print('Failed to fetch asset totals: ${response.statusCode}'); // Log status code
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Get the height and width of the device
-    final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       body: Stack(
         children: [
-          // Background image
           Positioned.fill(
             child: Image.asset(
-              'assets/images/airplane.jpg', // Replace with your background image
+              'assets/images/airplane.jpg',
               fit: BoxFit.cover,
             ),
           ),
-
-          // Main Dashboard content
           Positioned.fill(
             child: ListView(
-              padding: EdgeInsets.only(
-                  top: screenHeight * 0.1), // Adjust top padding for layout
+              padding: EdgeInsets.only(top: screenHeight * 0.1),
               children: [
-                // Container for Dashboard header and items
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.grey[300], // Gray color
+                    color: Colors.grey[300],
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(50),
                       topRight: Radius.circular(50),
                     ),
                   ),
-                  padding: EdgeInsets.symmetric(
-                    vertical: screenHeight * 0.03,
-                    horizontal: screenWidth * 0.04,
-                  ), // Responsive padding
+                  padding: EdgeInsets.all(screenHeight * 0.03),
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.center, // Center align
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Dashboard Header (Title) with Logout button
-                      const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Centered title
-                          Expanded(
-                            child: Center(
-                              child: Text(
-                                'DASHBOARD',
-                                style: TextStyle(
-                                  fontSize: 40, // Responsive font size
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ),
-                          ),
-                          // Logout button
-                        ],
+                      const Text(
+                        'DASHBOARD',
+                        style: TextStyle(
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
                       ),
-                      SizedBox(
-                          height: screenHeight * 0.03), // Responsive height
+                      SizedBox(height: screenHeight * 0.03),
 
                       // Borrowed Assets Card
                       _buildDashboardCard(
                         icon: Icons.inventory_2_outlined,
                         iconColor: Colors.black,
-                        assetType: 'borrowed assets',
-                        count: 10,
+                        assetType: 'Borrowed Assets',
+                        count: borrowedCount,
                         screenHeight: screenHeight,
-                        screenWidth: screenWidth,
                       ),
 
                       // Available Assets Card
                       _buildDashboardCard(
                         icon: Icons.check_circle,
                         iconColor: Colors.green,
-                        assetType: 'available assets',
-                        count: 20,
+                        assetType: 'Available Assets',
+                        count: availableCount,
                         screenHeight: screenHeight,
-                        screenWidth: screenWidth,
                       ),
 
                       // Disabled Assets Card
                       _buildDashboardCard(
                         icon: Icons.cancel,
                         iconColor: Colors.red,
-                        assetType: 'disabled assets',
-                        count: 10,
+                        assetType: 'Disabled Assets',
+                        count: disabledCount,
                         screenHeight: screenHeight,
-                        screenWidth: screenWidth,
                       ),
                     ],
                   ),
@@ -101,30 +109,25 @@ class DashboardLecture extends StatelessWidget {
               ],
             ),
           ),
-
-          // Footer section - you can put your footer here
         ],
       ),
     );
   }
 
-  // Method to build the dashboard cards as rectangles
   Widget _buildDashboardCard({
     required IconData icon,
     required Color iconColor,
     required String assetType,
     required int count,
-    required double screenHeight, // Pass screenHeight
-    required double screenWidth, // Pass screenWidth
+    required double screenHeight,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-          vertical: 8, horizontal: 16), // Responsive padding
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: SizedBox(
-        width: double.infinity, // This will make the card take full width
+        width: double.infinity,
         child: Card(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30), // Rounded corners
+            borderRadius: BorderRadius.circular(30),
           ),
           margin: const EdgeInsets.symmetric(vertical: 8),
           child: Padding(
@@ -136,8 +139,7 @@ class DashboardLecture extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   assetType,
-                  style: TextStyle(
-                      fontSize: screenHeight * 0.03), // Responsive font size
+                  style: TextStyle(fontSize: screenHeight * 0.03),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -145,7 +147,7 @@ class DashboardLecture extends StatelessWidget {
                   style: TextStyle(
                     fontSize: screenHeight * 0.04,
                     fontWeight: FontWeight.bold,
-                  ), // Responsive font size
+                  ),
                 ),
               ],
             ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:plane_borrow/Desige/Staff/Listplane_staff.dart';
 import 'History_staff.dart';
-import 'dashboard_staff.dart';
+import 'dashboard_staff.dart'; // Make sure this import is correct
 import 'Return_staff.dart';
 
 class HomeStaff extends StatefulWidget {
@@ -30,9 +30,8 @@ class _AppbarstudentState extends State<HomeStaff> {
         bottomNavigationBar: Container(
           color: Colors.black,
           child: const TabBar(
-            labelColor:
-                Color.fromARGB(255, 251, 96, 85), // สีของข้อความที่ถูกเลือก
-            unselectedLabelColor: Colors.white, // สีของข้อความที่ไม่ได้ถูกเลือก
+            labelColor: Color.fromARGB(255, 251, 96, 85), // Selected text color
+            unselectedLabelColor: Colors.white, // Unselected text color
             labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             tabs: [
               Tab(
@@ -45,7 +44,7 @@ class _AppbarstudentState extends State<HomeStaff> {
               ),
               Tab(
                 icon: Icon(Icons.dashboard),
-                text: 'Dashbord',
+                text: 'Dashboard', // Fixed typo here (from 'Dashbord' to 'Dashboard')
               ),
               Tab(
                 icon: Icon(Icons.watch_later_rounded),
@@ -54,11 +53,11 @@ class _AppbarstudentState extends State<HomeStaff> {
             ],
           ),
         ),
-        body: const TabBarView(
+        body: TabBarView( // Removed `const` here
           children: [
             ListplaneStaff(),
             ReturnStaff(),
-            Dashboardstaff(),
+            DashboardStaff(), // Corrected the widget name here
             HistoryStaff()
           ],
         ),
