@@ -251,11 +251,37 @@ app.put('/updateplane/:planeID', (req, res) => {
   });
 });
 
+// Request Plane
+app.get('/RequestStudent', (req, res) => {
+  const query = 'SELECT * FROM rqtplane';
 
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err);
+      return res.status(500).send('Error retrieving data from database');
+    }
+    res.status(200).json(results); // ส่งข้อมูลกลับในรูปแบบ JSON
+  });
+});
+
+// Student-History
+app.post("/HistoryStudent", function(req, res) {
+  let sql = 'SELECT * FROM `history`';
+
+  db.query(sql, (err, results) => {
+      if (err) {
+          console.error('Database query error:', err);
+          return res.status(500).json({ error: "Database server error" });
+      }
+      console.log('Query results:', results);
+      return res.status(200).json({
+          message: "Data retrieved successfully",
+          data: results,
+      });
+  });
+});
 
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
-// ทำถูกมั้ยนะ
