@@ -166,29 +166,9 @@ app.put('/Returnplane/:request_id', function(req, res) {
     }
 });
 
-//Staff-Dashboard
-// 0 = unavailble, 1 = Available, 2 = pending
-app.put("/DashboardStaff", function(req, res) {
-    let sql = 'SELECT status FROM `plane`';
-
-    db.query(sql, (err, results) => {
-        if (err) {
-            console.error('Database query error:', err);
-            return res.status(500).json({ error: "Database server error" });
-        }
-        
-        console.log('Query results:', results);
-
-        
-        return res.status(200).json({
-            results,
-            requestBody: req.body 
-        });
-    });
-});
-// Listplanes Staff
+// Listplanes staff
 app.get('/plane', (req, res) => {
-  const query = 'SELECT * FROM planes';
+  const query = 'SELECT * FROM plane';
 
   db.query(query, (err, results) => {
     if (err) {
@@ -201,7 +181,7 @@ app.get('/plane', (req, res) => {
 
 
 
-// app planes
+// add planes
 app.post('/addplane', (req, res) => {
   const { planeName, planeTitle, status, catagory, seat, planeDescription, tailNumber, image } = req.body;
 
@@ -223,20 +203,20 @@ app.post('/addplane', (req, res) => {
 });
 
 
-//Edit Staff
+//Edit plane
 app.put('/updateplane/:planeID', (req, res) => {
   const { planeID } = req.params;
   const { planeName, planeTitle, status, category, seat, planeDescription, tailNumber, image } = req.body;
 
-  // check information
+  // ตรวจสอบว่ามีข้อมูลครบถ้วนหรือไม่
   if (!planeName || !planeTitle || status === undefined || !category || !seat || !planeDescription || !tailNumber || !image) {
     return res.status(400).send({ error: 'Please provide complete in formation' });
   }
 
-  //  SQL  for update information
+  // คำสั่ง SQL สำหรับการอัปเดตข้อมูล
   const query = `UPDATE plane SET planeName = ?, planeTitle = ?, status = ?, category = ?, seat = ?, planeDescription = ?, tailNumber = ?, image = ? WHERE planeID = ?`;
 
-  // call query  update information in database
+  // เรียกใช้ query เพื่ออัปเดตข้อมูลในฐานข้อมูล
   db.query(query, [planeName, planeTitle, status, category, seat, planeDescription, tailNumber, image, planeID], (err, result) => {
     if (err) {
       console.error('Database update error:', err);
@@ -250,6 +230,29 @@ app.put('/updateplane/:planeID', (req, res) => {
     res.send({ message: 'Edit plane successful' });
   });
 });
+
+
+//Staff-Dashboard
+// 0 = unavailble, 1 = Available, 2 = pending
+app.put("/DashboardStaff", function(req, res) {
+    let sql = 'SELECT status FROM `plane`';
+
+    db.query(sql, (err, results) => {
+        if (err) {
+            console.error('Database query error:', err);
+            return res.status(500).json({ error: "Database server error" });
+        }
+        
+        console.log('Query results:', results);
+
+        
+        return res.status(200).json({
+            results,
+            requestBody: req.body 
+        });
+    });
+});
+// Listplanes Staff
 
 
 
