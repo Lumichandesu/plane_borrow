@@ -223,7 +223,7 @@ app.post('/addplane', (req, res) => {
 });
 
 
-
+//Edit Staff
 app.put('/updateplane/:planeID', (req, res) => {
   const { planeID } = req.params;
   const { planeName, planeTitle, status, category, seat, planeDescription, tailNumber, image } = req.body;
