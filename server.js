@@ -186,6 +186,72 @@ app.put("/DashboardStaff", function(req, res) {
         });
     });
 });
+// Listplanes Staff
+app.get('/plane', (req, res) => {
+  const query = 'SELECT * FROM planes';
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err);
+      return res.status(500).send('Error retrieving data from database');
+    }
+    res.status(200).json(results); // ส่งข้อมูลกลับในรูปแบบ JSON
+  });
+});
+
+
+
+// app planes
+app.post('/addplane', (req, res) => {
+  const { planeName, planeTitle, status, catagory, seat, planeDescription, tailNumber, image } = req.body;
+
+  
+  if (!planeName || !planeTitle || status === undefined || !catagory || !seat || !planeDescription || !tailNumber || !image) {
+    return res.status(400).send({ error: 'Please provide complete in formation' });
+  }
+
+  const query = `INSERT INTO plane (planeName, planeTitle, status, category, seat, planeDescription, tailNumber, image)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+
+  db.query(query, [planeName, planeTitle, status, catagory, seat, planeDescription, tailNumber, image], (err, result) => {
+    if (err) {
+      console.error('Database insert error:', err);
+      return res.status(500).send({ error: 'Database error' });
+    }
+    res.send({ message: 'Plane added successfully', id: result.insertId });
+  });
+});
+
+
+//Edit Staff
+app.put('/updateplane/:planeID', (req, res) => {
+  const { planeID } = req.params;
+  const { planeName, planeTitle, status, category, seat, planeDescription, tailNumber, image } = req.body;
+
+  // check information
+  if (!planeName || !planeTitle || status === undefined || !category || !seat || !planeDescription || !tailNumber || !image) {
+    return res.status(400).send({ error: 'Please provide complete in formation' });
+  }
+
+  //  SQL  for update information
+  const query = `UPDATE plane SET planeName = ?, planeTitle = ?, status = ?, category = ?, seat = ?, planeDescription = ?, tailNumber = ?, image = ? WHERE planeID = ?`;
+
+  // call query  update information in database
+  db.query(query, [planeName, planeTitle, status, category, seat, planeDescription, tailNumber, image, planeID], (err, result) => {
+    if (err) {
+      console.error('Database update error:', err);
+      return res.status(500).send({ error: 'Error in database' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).send({ message: 'Not found information' });
+    }
+
+    res.send({ message: 'Edit plane successful' });
+  });
+});
+
+
 
 // Start the server
 app.listen(PORT, () => {
