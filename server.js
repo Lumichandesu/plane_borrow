@@ -50,6 +50,8 @@ app.get('/asset-status', (req, res) => {
   });
 });
 
+// ================ Login =======================
+
 // User registration route
 app.post('/register', (req, res) => {
   const { username, email, password, role_id } = req.body;
@@ -120,51 +122,7 @@ app.post('/login', (req, res) => {
   });
 });
 
-// Staff-History
-app.post("/HistoryStaff", function(req, res) {
-    let sql = 'SELECT * FROM `history`';
-
-    db.query(sql, (err, results) => {
-        if (err) {
-            console.error('Database query error:', err);
-            return res.status(500).json({ error: "Database server error" });
-        }
-        console.log('Query results:', results);
-        return res.status(200).json({
-            message: "Data retrieved successfully",
-            data: results,
-            requestBody: req.body 
-        });
-    });
-});
-
-// Staff-Return
-//ตัวนี้ต้องมีข้อมูลในดาต้าเบส เอาตัวเลขใน requestID ในdatabaseแทนที่ :request_id ของurl ถึงจะใช้งานได้
-app.put('/Returnplane/:request_id', function(req, res) {
-    const requestID = req.params.request_id; // ใช้ request_id จาก URL ที่ถูกต้อง
-    const { rqtStatus } = req.body; // รับข้อมูลที่ต้องการอัปเดต
-
-    // ตรวจสอบข้อมูลที่ส่งมา
-    if (requestID && rqtStatus) {
-        // SQL query เพื่ออัปเดตสถานะใน rqtplane
-        const sql = "UPDATE `rqtplane` SET rqtStatus = ? WHERE requestID = ?";
-
-        db.query(sql, [rqtStatus, requestID], (err, results) => {
-            if (err) {
-                console.error("Error updating request:", err);
-                return res.status(500).json({ error: "Database server error" });
-            }
-
-            if (results.affectedRows === 0) {
-                return res.status(404).json({ message: "data not found" });
-            }
-
-            return res.status(200).json({ message: "updated successfully",requestBody: req.body  });
-        });
-    } else {
-        res.status(400).json({ error: 'fail' });
-    }
-});
+// ================ List Plane ===============
 
 // Listplanes staff
 app.get('/plane', (req, res) => {
@@ -178,8 +136,6 @@ app.get('/plane', (req, res) => {
     res.status(200).json(results); // ส่งข้อมูลกลับในรูปแบบ JSON
   });
 });
-
-
 
 // add planes
 app.post('/addplane', (req, res) => {
@@ -201,7 +157,6 @@ app.post('/addplane', (req, res) => {
     res.send({ message: 'Plane added successfully', id: result.insertId });
   });
 });
-
 
 //Edit plane
 app.put('/updateplane/:planeID', (req, res) => {
@@ -230,6 +185,40 @@ app.put('/updateplane/:planeID', (req, res) => {
     res.send({ message: 'Edit plane successful' });
   });
 });
+
+// ================ Request / Return ===================
+
+// Student-Request
+
+// Staff-Return
+//ตัวนี้ต้องมีข้อมูลในดาต้าเบส เอาตัวเลขใน requestID ในdatabaseแทนที่ :request_id ของurl ถึงจะใช้งานได้
+app.put('/Returnplane/:request_id', function(req, res) {
+  const requestID = req.params.request_id; // ใช้ request_id จาก URL ที่ถูกต้อง
+  const { rqtStatus } = req.body; // รับข้อมูลที่ต้องการอัปเดต
+
+  // ตรวจสอบข้อมูลที่ส่งมา
+  if (requestID && rqtStatus) {
+      // SQL query เพื่ออัปเดตสถานะใน rqtplane
+      const sql = "UPDATE `rqtplane` SET rqtStatus = ? WHERE requestID = ?";
+
+      db.query(sql, [rqtStatus, requestID], (err, results) => {
+          if (err) {
+              console.error("Error updating request:", err);
+              return res.status(500).json({ error: "Database server error" });
+          }
+
+          if (results.affectedRows === 0) {
+              return res.status(404).json({ message: "data not found" });
+          }
+
+          return res.status(200).json({ message: "updated successfully",requestBody: req.body  });
+      });
+  } else {
+      res.status(400).json({ error: 'fail' });
+  }
+});
+
+// ============== Dashboard ====================
 
 //Staff-Dashboard
 // 0 = unavailble, 1 = Available, 2 = pending
@@ -272,19 +261,29 @@ app.put("/DashboardLecture", function(req, res) {
   });
 });
 
-// Request Plane
-app.get('/RequestStudent:', (req, res) => {
-  const query = 'SELECT * FROM rqtplane';
+// ================ Check Request Plane ====================
 
-  db.query(query, (err, results) => {
+// Request Plane Student
+app.get('/RequestStudent/:rqtBy', (req, res) => {
+  const { rqtBy } = req.params; // ดึงค่า rqtBy จาก URL parameter
+
+  // ตรวจสอบว่ามีการส่ง rqtBy มาหรือไม่
+  if (!rqtBy) {
+    return res.status(400).json({ error: 'Please provide rqtBy' });
+  }
+
+  const query = 'SELECT * FROM rqtplane WHERE rqtBy = ?';
+
+  db.query(query, [rqtBy], (err, results) => {
     if (err) {
       console.error('Error executing query:', err);
-      return res.status(500).send('Error retrieving data from database');
+      return res.status(500).json({ error: 'Error retrieving data from database' });
     }
     res.status(200).json(results); // ส่งข้อมูลกลับในรูปแบบ JSON
   });
 });
 
+// Request Plane Student Lecture
 app.get('/RequestLecture', (req, res) => {
   const query = 'SELECT * FROM rqtplane';
 
@@ -297,9 +296,49 @@ app.get('/RequestLecture', (req, res) => {
   });
 });
 
+// ================= History Plane =============
+
 // Student-History
-app.post("/HistoryStudent", function(req, res) {
-  let sql = 'SELECT * FROM `history` WHERE';
+app.post('/HistoryStudent/:rqtBy', (req, res) => {
+  const rqtBy = req.params.rqtBy; // ดึงค่า rqtBy จาก URL
+
+  if (!rqtBy) {
+    return res.status(400).json({ message: 'Missing rqtBy parameter' });
+  }
+
+  const query = 'SELECT * FROM history WHERE rqtBy = ?';
+  db.query(query, [rqtBy], (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err);
+      return res.status(500).json({ message: 'Error retrieving data from database' });
+    }
+    res.status(200).json(results);
+  });
+});
+
+
+// Lecture-History
+app.post('/HistoryLecture/:approved', (req, res) => {
+  const approved = req.params.approved; // ดึงค่า approved จาก URL
+
+  if (!approved) {
+    return res.status(400).json({ message: 'Missing approved parameter' });
+  }
+
+  const query = 'SELECT * FROM history WHERE approved = ?';
+  db.query(query, [approved], (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err);
+      return res.status(500).json({ message: 'Error retrieving data from database' });
+    }
+    res.status(200).json(results);
+  });
+});
+
+
+// Staff-History
+app.post("/HistoryStaff", function(req, res) {
+  let sql = 'SELECT * FROM `history`';
 
   db.query(sql, (err, results) => {
       if (err) {
@@ -310,10 +349,10 @@ app.post("/HistoryStudent", function(req, res) {
       return res.status(200).json({
           message: "Data retrieved successfully",
           data: results,
+          requestBody: req.body 
       });
   });
 });
-
 
 // Start the server
 app.listen(PORT, () => {
