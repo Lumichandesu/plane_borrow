@@ -273,27 +273,18 @@ app.put("/DashboardLecture", function(req, res) {
 });
 
 // Request Plane
-app.get('/RequestStudent/:rqtBy', (req, res) => {
-  const { rqtBy } = req.params; // ดึงค่า rqtBy จาก URL parameter
+app.get('/RequestStudent:', (req, res) => {
+  const query = 'SELECT * FROM rqtplane';
 
-  // ตรวจสอบว่ามีการส่ง rqtBy มาหรือไม่
-  if (!rqtBy) {
-    return res.status(400).json({ error: 'Please provide rqtBy' });
-  }
-
-  const query = 'SELECT * FROM rqtplane WHERE rqtBy = ?';
-
-  db.query(query, [rqtBy], (err, results) => {
+  db.query(query, (err, results) => {
     if (err) {
       console.error('Error executing query:', err);
-      return res.status(500).json({ error: 'Error retrieving data from database' });
+      return res.status(500).send('Error retrieving data from database');
     }
     res.status(200).json(results); // ส่งข้อมูลกลับในรูปแบบ JSON
   });
 });
 
-
-// Request-Lecture
 app.get('/RequestLecture', (req, res) => {
   const query = 'SELECT * FROM rqtplane';
 
@@ -307,38 +298,19 @@ app.get('/RequestLecture', (req, res) => {
 });
 
 // Student-History
-app.post('/HistoryStudent/:rqtBy', (req, res) => {
-  const rqtBy = req.params.rqtBy; // ดึงค่า rqtBy จาก URL
+app.post("/HistoryStudent", function(req, res) {
+  let sql = 'SELECT * FROM `history` WHERE';
 
-  if (!rqtBy) {
-    return res.status(400).json({ message: 'Missing rqtBy parameter' });
-  }
-
-  const query = 'SELECT * FROM history WHERE rqtBy = ?';
-  db.query(query, [rqtBy], (err, results) => {
-    if (err) {
-      console.error('Error executing query:', err);
-      return res.status(500).json({ message: 'Error retrieving data from database' });
-    }
-    res.status(200).json(results);
-  });
-});
-
-// Lecture-History
-app.post('/HistoryLecture/:approved', (req, res) => {
-  const approved = req.params.approved; // ดึงค่า approved จาก URL
-
-  if (!approved) {
-    return res.status(400).json({ message: 'Missing approved parameter' });
-  }
-
-  const query = 'SELECT * FROM history WHERE approved = ?';
-  db.query(query, [approved], (err, results) => {
-    if (err) {
-      console.error('Error executing query:', err);
-      return res.status(500).json({ message: 'Error retrieving data from database' });
-    }
-    res.status(200).json(results);
+  db.query(sql, (err, results) => {
+      if (err) {
+          console.error('Database query error:', err);
+          return res.status(500).json({ error: "Database server error" });
+      }
+      console.log('Query results:', results);
+      return res.status(200).json({
+          message: "Data retrieved successfully",
+          data: results,
+      });
   });
 });
 
