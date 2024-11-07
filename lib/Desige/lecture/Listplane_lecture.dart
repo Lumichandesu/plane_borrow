@@ -1,24 +1,66 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:plane_borrow/pages/Loginpage.dart';
 
-class Listplanelecture extends StatelessWidget {
+class Listplanelecture extends StatefulWidget {
   const Listplanelecture({super.key});
+
+  @override
+  _ListplanelectureState createState() => _ListplanelectureState();
+}
+
+class _ListplanelectureState extends State<Listplanelecture> {
+  List<dynamic> planes = []; // To hold the fetched plane data
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPlanes();
+  }
+
+  // Fetch planes from the server
+  Future<void> _fetchPlanes() async {
+    try {
+      final response = await http
+          .get(Uri.parse('http://localhost:3000/plane')); // Your server URL
+      if (response.statusCode == 200) {
+        // If server returns a 200 OK response, parse the JSON
+        setState(() {
+          planes =
+              jsonDecode(response.body); // Update planes with the fetched data
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load planes');
+      }
+    } catch (e) {
+      print('Error fetching planes: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
+          // Background Image
           Positioned.fill(
             child: Image.asset(
               'assets/images/airplane.jpg',
               fit: BoxFit.cover,
             ),
           ),
+          // Main Content
           Positioned.fill(
             child: ListView(
               padding: const EdgeInsets.only(top: 100),
               children: [
+                // Container with the plane list and logout button
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.grey[300],
@@ -30,13 +72,11 @@ class Listplanelecture extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.center, // Center items horizontally
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       // Plane List Header with Logout Button
                       Row(
-                        mainAxisAlignment: MainAxisAlignment
-                            .spaceBetween, // Use space between to position header and button
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
                             'PLANE LIST',
@@ -60,44 +100,26 @@ class Listplanelecture extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 24),
-
-                      // Plane Cards
-                      _buildPlaneCard(
-                        context: context,
-                        imagePath: 'assets/images/Beechcraft Bonanza G36.png',
-                        availability: 'Available',
-                        planeName: 'CESSNA 172 SKYHAWK',
-                      ),
-                      _buildPlaneCard(
-                        context: context,
-                        imagePath: 'assets/images/CESSANA 172.png',
-                        availability: 'Unavailable',
-                        planeName: 'N994KD Cirrus SR-22T-GTS',
-                      ),
-                      _buildPlaneCard(
-                        context: context,
-                        imagePath: 'assets/images/Cirrus SR-22T.png',
-                        availability: 'Unavailable',
-                        planeName: 'Embraer Phenom 300',
-                      ),
-                      _buildPlaneCard(
-                        context: context,
-                        imagePath: 'assets/images/Diamond DA40.png',
-                        availability: 'Available',
-                        planeName: 'Gulfstream G280',
-                      ),
-                      _buildPlaneCard(
-                        context: context,
-                        imagePath: 'assets/images/Embraer Phonom 300.png',
-                        availability: 'Available',
-                        planeName: 'Diamond DA40',
-                      ),
-                      _buildPlaneCard(
-                        context: context,
-                        imagePath: 'assets/images/Gulfstream G280.png',
-                        availability: 'Available',
-                        planeName: 'Beechcraft Bonanza G36',
-                      ),
+                      // Show loading indicator while fetching data
+                      isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : Column(
+                              children: planes.map((plane) {
+                                return _buildPlaneCard(
+                                  context: context,
+                                  imagePath: 'assets/images/${plane['image']}',
+                                  availability: plane['status'] == 1
+                                      ? 'Available'
+                                      : plane['status'] == 0
+                                          ? 'Unavailable'
+                                          : 'Pending',
+                                  planeName: plane['planeName'],
+                                  seat: plane['seat'].toString(),
+                                  tailNumber: plane['tailNumber'],
+                                  planeDescription: plane['planeDescription'],
+                                );
+                              }).toList(),
+                            ),
                     ],
                   ),
                 ),
@@ -109,13 +131,18 @@ class Listplanelecture extends StatelessWidget {
     );
   }
 
+  // Plane card builder
   Widget _buildPlaneCard({
     required BuildContext context,
     required String imagePath,
     required String availability,
     required String planeName,
+    required String seat,
+    required String tailNumber,
+    required String planeDescription,
   }) {
     bool isAvailable = availability == 'Available';
+    bool isPending = availability == 'Pending';
 
     Widget cardContent = Card(
       shape: RoundedRectangleBorder(
@@ -139,7 +166,7 @@ class Listplanelecture extends StatelessWidget {
               style: TextStyle(
                 color: isAvailable
                     ? const Color.fromARGB(255, 5, 184, 34)
-                    : Colors.red,
+                    : (isPending ? Colors.yellow : Colors.red),
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -156,35 +183,48 @@ class Listplanelecture extends StatelessWidget {
       ),
     );
 
-    // Only wrap with InkWell if plane is available
-    return isAvailable
-        ? InkWell(
-            onTap: () {
-              // Navigate to a new page with plane details
+    // Only wrap with InkWell if plane is available or pending
+    return InkWell(
+      onTap: isAvailable || isPending
+          ? () {
+              // Navigate to plane detail page
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => PlaneDetailPage(
                     imagePath: imagePath,
                     planeName: planeName,
+                    seat: seat,
+                    tailNumber: tailNumber,
+                    planeDescription: planeDescription,
+                    isPending:
+                        isPending, // Pass the pending status to detail page
                   ),
                 ),
               );
-            },
-            child: cardContent,
-          )
-        : cardContent;
+            }
+          : null, // Make the plane card non-clickable if unavailable
+      child: cardContent,
+    );
   }
 }
 
 class PlaneDetailPage extends StatefulWidget {
   final String imagePath;
   final String planeName;
+  final String seat;
+  final String tailNumber;
+  final String planeDescription;
+  final bool isPending; // Add isPending to handle Pending status
 
   const PlaneDetailPage({
     super.key,
     required this.imagePath,
     required this.planeName,
+    required this.seat,
+    required this.tailNumber,
+    required this.planeDescription,
+    required this.isPending, // Add this parameter
   });
 
   @override
@@ -224,14 +264,6 @@ class _PlaneDetailPageState extends State<PlaneDetailPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share, color: Colors.black),
-            onPressed: () {
-              // Add share logic here
-            },
-          ),
-        ],
       ),
       extendBodyBehindAppBar: true,
       body: Stack(
@@ -285,11 +317,11 @@ class _PlaneDetailPageState extends State<PlaneDetailPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  // Container with icon and text for seats and registration
+                  // Additional plane details (seats, registration)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
+                      // Seat number
                       Container(
                         padding: const EdgeInsets.symmetric(
                           vertical: 8,
@@ -299,17 +331,18 @@ class _PlaneDetailPageState extends State<PlaneDetailPage> {
                           color: Colors.grey.shade200,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
                             Icon(Icons.event_seat, color: Colors.grey),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             Text(
-                              '4 SEAT',
-                              style: TextStyle(color: Colors.grey),
+                              widget.seat,
+                              style: const TextStyle(fontSize: 16),
                             ),
                           ],
                         ),
                       ),
+                      // Tail number
                       Container(
                         padding: const EdgeInsets.symmetric(
                           vertical: 8,
@@ -319,52 +352,33 @@ class _PlaneDetailPageState extends State<PlaneDetailPage> {
                           color: Colors.grey.shade200,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
                             Icon(Icons.airplanemode_active, color: Colors.grey),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             Text(
-                              'N72370',
-                              style: TextStyle(color: Colors.grey),
+                              widget.tailNumber,
+                              style: const TextStyle(fontSize: 16),
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-
-                  // Availability Status
-                  const Row(
-                    children: [
-                      Text(
-                        'Borrow Status: ',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                  const SizedBox(height: 16),
+                  // Plane description
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Text(
+                      widget.planeDescription,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
                       ),
-                      Text(
-                        'Available',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
-                    ],
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                  const SizedBox(height: 24),
-
-                  // Plane details description
-                  const Text(
-                    'CESSNA 172 SKYHAWK DETAILS',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'The Cessna 172 Skyhawk is a popular and reliable four-seater aircraft, perfect for flight training, sightseeing, and general aviation. It features a single piston engine, reaching speeds of up to 140 knots and a range of 640 nautical miles. Comfortable and easy to handle, it\'s ready for rent, providing a smooth and safe flying experience. A valid pilot\'s license and document verification are required for rental.',
-                    style: TextStyle(fontSize: 14, color: Colors.black87),
-                  ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
