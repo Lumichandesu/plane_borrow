@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'Listplane_Student.dart';
-import 'Request_Student.dart';
-import 'History_Student.dart';
+import 'package:plane_borrow/Desige/student/Listplane_Student.dart';
+import 'package:plane_borrow/Desige/student/Request_Student.dart';
+import 'package:plane_borrow/Desige/student/History_Student.dart';
 
 class HomeStudent extends StatefulWidget {
   const HomeStudent({super.key});
 
   @override
-  State<HomeStudent> createState() => _AppbarstudentState();
+  State<HomeStudent> createState() => _HomeStudentState();
 }
 
-class _AppbarstudentState extends State<HomeStudent> {
+class _HomeStudentState extends State<HomeStudent> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -29,9 +29,8 @@ class _AppbarstudentState extends State<HomeStudent> {
         bottomNavigationBar: Container(
           color: Colors.black,
           child: const TabBar(
-            labelColor:
-                Color.fromARGB(255, 251, 96, 85), // สีของข้อความที่ถูกเลือก
-            unselectedLabelColor: Colors.white, // สีของข้อความที่ไม่ได้ถูกเลือก
+            labelColor: Color.fromARGB(255, 251, 96, 85),
+            unselectedLabelColor: Colors.white,
             labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             tabs: [
               Tab(
@@ -50,7 +49,11 @@ class _AppbarstudentState extends State<HomeStudent> {
           ),
         ),
         body: const TabBarView(
-          children: [Listplanestudent(), RequestStudent(), HistoryStudent()],
+          children: [
+            ListplaneStudent(),
+            RequestStudent(),
+            HistoryStudent(),
+          ],
         ),
       ),
     );
