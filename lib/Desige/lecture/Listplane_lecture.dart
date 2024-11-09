@@ -166,7 +166,7 @@ class _ListplanelectureState extends State<Listplanelecture> {
               style: TextStyle(
                 color: isAvailable
                     ? const Color.fromARGB(255, 5, 184, 34)
-                    : (isPending ? Colors.yellow : Colors.red),
+                    : (isPending ? Colors.orange : Colors.red),
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -378,6 +378,19 @@ class _PlaneDetailPageState extends State<PlaneDetailPage> {
                       textAlign: TextAlign.center,
                     ),
                   ),
+                  // Pending status message
+                  if (widget.isPending)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text(
+                        'This Pending is in Request',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.orange,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 16),
                 ],
               ),

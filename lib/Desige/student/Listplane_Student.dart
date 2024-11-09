@@ -154,7 +154,7 @@ class _ListplaneStudentState extends State<ListplaneStudent> {
               style: TextStyle(
                 color: isAvailable
                     ? const Color.fromARGB(255, 5, 184, 34)
-                    : (isPending ? Colors.yellow : Colors.red),
+                    : (isPending ? Colors.orange : Colors.red),
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
