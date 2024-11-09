@@ -363,12 +363,6 @@ class _PlaneDetailStudentPageState extends State<PlaneDetailStudentPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  if (widget.isPending)
-                    const Text(
-                      'Asset is in Pending Status',
-                      style: TextStyle(color: Colors.orange, fontSize: 16),
-                    ),
-                  const SizedBox(height: 16),
                   if (!widget.isPending)
                     Column(
                       children: [
