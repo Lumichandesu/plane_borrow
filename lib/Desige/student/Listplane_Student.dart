@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:intl/intl.dart';
 import 'package:plane_borrow/pages/Loginpage.dart';
 
 class ListplaneStudent extends StatefulWidget {
@@ -62,7 +63,8 @@ class _ListplaneStudentState extends State<ListplaneStudent> {
                       topRight: Radius.circular(50),
                     ),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -78,7 +80,8 @@ class _ListplaneStudentState extends State<ListplaneStudent> {
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.logout, color: Colors.black, size: 30),
+                            icon: const Icon(Icons.logout,
+                                color: Colors.black, size: 30),
                             onPressed: () {
                               Navigator.push(
                                 context,
@@ -219,6 +222,10 @@ class PlaneDetailStudentPage extends StatefulWidget {
 class _PlaneDetailStudentPageState extends State<PlaneDetailStudentPage> {
   DateTime? borrowDate;
   DateTime? returnDate;
+
+  String formatDate(DateTime date) {
+    return DateFormat('yyyy-MM-dd').format(date);
+  }
 
   Future<void> _selectDate(BuildContext context, bool isBorrowDate) async {
     final DateTime? pickedDate = await showDatePicker(
@@ -372,7 +379,8 @@ class _PlaneDetailStudentPageState extends State<PlaneDetailStudentPage> {
                             const Text('Select Borrow Date'),
                             IconButton(
                               onPressed: () => _selectDate(context, true),
-                              icon: const Icon(Icons.calendar_today, color: Colors.black),
+                              icon: const Icon(Icons.calendar_today,
+                                  color: Colors.black),
                             ),
                           ],
                         ),
@@ -384,7 +392,8 @@ class _PlaneDetailStudentPageState extends State<PlaneDetailStudentPage> {
                               onPressed: borrowDate == null
                                   ? null
                                   : () => _selectDate(context, false),
-                              icon: const Icon(Icons.calendar_today, color: Colors.black),
+                              icon: const Icon(Icons.calendar_today,
+                                  color: Colors.black),
                             ),
                           ],
                         ),
@@ -393,8 +402,17 @@ class _PlaneDetailStudentPageState extends State<PlaneDetailStudentPage> {
                           onPressed: (borrowDate != null && returnDate != null)
                               ? dummyRentFunction
                               : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                Colors.black, // Button background color
+                            textStyle: const TextStyle(
+                              fontWeight: FontWeight.bold, // Font weight
+                            ),
+                            foregroundColor:
+                                Colors.white, // Text color set to white
+                          ),
                           child: const Text('RENT NOW'),
-                        ),
+                        )
                       ],
                     ),
                 ],
