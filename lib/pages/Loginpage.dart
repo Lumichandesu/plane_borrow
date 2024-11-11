@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http; // Import HTTP package
-import 'dart:convert'; // For JSON encoding/decoding
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:plane_borrow/Desige/student/Home_Student.dart';
-import 'package:plane_borrow/Desige/Staff/Home_Staff.dart'; // Import Home_Staff
-import 'package:plane_borrow/Desige/lecture/Home_lecture.dart'; // Import Home_lecture
+import 'package:plane_borrow/Desige/Staff/Home_Staff.dart';
+import 'package:plane_borrow/Desige/lecture/Home_lecture.dart';
 import 'Register.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Loginpage extends StatefulWidget {
   const Loginpage({super.key});
@@ -16,14 +17,12 @@ class Loginpage extends StatefulWidget {
 class _LoginpageState extends State<Loginpage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _isLoading = false; // Loading state
+  bool _isLoading = false;
 
-  // Function to handle login
   Future<void> _login() async {
     final String username = _usernameController.text.trim();
     final String password = _passwordController.text.trim();
 
-    // Input validation
     if (username.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter both username and password.')),
@@ -32,13 +31,12 @@ class _LoginpageState extends State<Loginpage> {
     }
 
     setState(() {
-      _isLoading = true; // Show loading indicator
+      _isLoading = true;
     });
 
     try {
-      // Create the login request
       final response = await http.post(
-        Uri.parse('http://localhost:3000/login'), // Update this URL if necessary
+        Uri.parse('http://localhost:3000/login'), // Ensure the URL matches your API
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -49,10 +47,15 @@ class _LoginpageState extends State<Loginpage> {
       );
 
       if (response.statusCode == 200) {
-        // If the server returns an OK response, parse the JSON
         final user = jsonDecode(response.body);
 
-        // Navigate based on the role_id
+        if (user['token'] != null) {
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setString('auth_token', user['token']);
+        }
+
+        print(user); //Just check the token
+
         if (user['role_id'] == 1) {
           Navigator.pushReplacement(
             context,
@@ -70,20 +73,18 @@ class _LoginpageState extends State<Loginpage> {
           );
         }
       } else {
-        // Handle error response
         final errorResponse = jsonDecode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorResponse['message'] ?? 'Login failed')),
         );
       }
     } catch (e) {
-      // Handle network or unexpected errors
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Network error, please try again.')),
       );
     } finally {
       setState(() {
-        _isLoading = false; // Hide loading indicator
+        _isLoading = false;
       });
     }
   }
@@ -152,7 +153,7 @@ class _LoginpageState extends State<Loginpage> {
 
                     // Login button
                     ElevatedButton(
-                      onPressed: _isLoading ? null : _login, // Disable button if loading
+                      onPressed: _isLoading ? null : _login,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
                         shape: RoundedRectangleBorder(
