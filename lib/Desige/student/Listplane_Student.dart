@@ -79,19 +79,91 @@ class _ListplaneStudentState extends State<ListplaneStudent> {
                               color: Colors.black,
                             ),
                           ),
-                          IconButton(
+                         IconButton(
                             icon: const Icon(Icons.logout,
                                 color: Colors.black, size: 30),
                             onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const Loginpage()),
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    titlePadding: const EdgeInsets.all(0),
+                                    title: const Column(
+                                      children: [
+                                        const SizedBox(height: 20),
+                                        const Align(
+                                          alignment: Alignment.topCenter,
+                                          child: Icon(Icons.error_outline,
+                                              color: Colors.orange,
+                                              size: 50), 
+                                        ),
+                                        const SizedBox(height: 10),
+                                        const Text(
+                                          "Are you sure?",
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                    content: const Text(
+                                      "Are you sure you want to log out?",
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    actions: <Widget>[
+                                      TextButton(
+                                        child: const Text("Cancel"),
+                                        onPressed: () {
+                                          Navigator.of(context)
+                                              .pop(); 
+                                        },
+                                      ),
+                                      TextButton(
+                                        child: const Text("Logout"),
+                                        onPressed: () {
+                                          Navigator.of(context)
+                                              .pop(); 
+
+                                      
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              content: Row(
+                                                children: const [
+                                                  Icon(Icons.check_circle,
+                                                      color: Colors
+                                                          .green), 
+                                                  SizedBox(width: 10),
+                                                  Text(
+                                                    "Logout successful",
+                                                    style: TextStyle(
+                                                        color: Colors.grey),
+                                                  ),
+                                                ],
+                                              ),
+                                              backgroundColor:
+                                                  const Color.fromARGB(
+                                                      255, 245, 244, 244),
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                            ),
+                                          );
+
+                                        
+                                          Navigator.pushReplacement(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (context) =>
+                                                    const Loginpage()),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  );
+                                },
                               );
                             },
                           ),
-                        ],
-                      ),
                       const SizedBox(height: 24),
                       isLoading
                           ? const Center(child: CircularProgressIndicator())
