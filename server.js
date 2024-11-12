@@ -301,16 +301,34 @@ app.get('/RequestLecture', (req, res) => {
 // Student-History
 app.post('/HistoryStudent/:rqtBy', (req, res) => {
   const rqtBy = req.params.rqtBy; // ดึงค่า rqtBy จาก URL
+  console.log('rqtBy:', rqtBy); 
 
   if (!rqtBy) {
     return res.status(400).json({ message: 'Missing rqtBy parameter' });
   }
+  const query = `
+  SELECT 
+    h1.planeId, h1.rqtBy, h1.bDate, h1.rDate, h1.approved, h1.Lender, 
+    h1.ApprovedStatus, h1.ReturnStaus, u1.username AS rqtByName, 
+    p.planeName,p.image, u2.username AS LenderName, 
+    u3.username AS StaffName
+  FROM history h1
+  INNER JOIN users u1 ON h1.rqtBy = u1.id               
+  INNER JOIN users u2 ON h1.Lender = u2.id
+  INNER JOIN users u3 ON h1.approved = u3.id
+  JOIN Plane p ON h1.planeId = p.planeId 
+  WHERE h1.rqtBy = ?`;
 
-  const query = 'SELECT * FROM history WHERE rqtBy = ?';
+ 
+  // const query = 'SELECT * FROM history WHERE rqtBy = ?';
   db.query(query, [rqtBy], (err, results) => {
     if (err) {
       console.error('Error executing query:', err);
       return res.status(500).json({ message: 'Error retrieving data from database' });
+    }
+    console.log('Query Results:', results); // แสดงผลลัพธ์ที่ได้จาก query
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'No records found' });
     }
     res.status(200).json(results);
   });
