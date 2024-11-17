@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:plane_borrow/Desige/student/Listplane_Student.dart';
-import 'package:plane_borrow/Desige/student/Request_Student.dart';
-import 'package:plane_borrow/Desige/student/History_Student.dart';
+import 'Listplane_Student.dart';
+import 'Request_Student.dart';
+import 'History_Student3.dart';
 
 class HomeStudent extends StatefulWidget {
-  const HomeStudent({super.key});
+  final String userId; // เพิ่ม userId เพื่อเก็บค่า id ของผู้ใช้
+  const HomeStudent({super.key, required this.userId});
 
   @override
-  State<HomeStudent> createState() => _HomeStudentState();
+  State<HomeStudent> createState() => _AppbarstudentState();
 }
 
-class _HomeStudentState extends State<HomeStudent> {
+class _AppbarstudentState extends State<HomeStudent> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -29,8 +30,8 @@ class _HomeStudentState extends State<HomeStudent> {
         bottomNavigationBar: Container(
           color: Colors.black,
           child: const TabBar(
-            labelColor: Color.fromARGB(255, 251, 96, 85),
-            unselectedLabelColor: Colors.white,
+            labelColor: Color.fromARGB(255, 251, 96, 85), // สีของข้อความที่ถูกเลือก
+            unselectedLabelColor: Colors.white, // สีของข้อความที่ไม่ได้ถูกเลือก
             labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             tabs: [
               Tab(
@@ -48,11 +49,11 @@ class _HomeStudentState extends State<HomeStudent> {
             ],
           ),
         ),
-        body: const TabBarView(
+        body: TabBarView(
           children: [
             ListplaneStudent(),
-            RequestStudent(),
-            HistoryStudent(),
+            RequestStudent(userId: widget.userId),
+            HistoryStudent3(userId: widget.userId), // ส่ง userId ไปยังหน้า HistoryStudent3
           ],
         ),
       ),
