@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:plane_borrow/pages/Loginpage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ListplaneStudent extends StatefulWidget {
   const ListplaneStudent({super.key});
@@ -23,7 +24,8 @@ class _ListplaneStudentState extends State<ListplaneStudent> {
 
   Future<void> _fetchPlanes() async {
     try {
-      final response = await http.get(Uri.parse('http://localhost:3000/plane'));
+      final response =
+          await http.get(Uri.parse('http://192.168.1.3:3000/plane'));
       if (response.statusCode == 200) {
         setState(() {
           planes = jsonDecode(response.body);
@@ -72,14 +74,14 @@ class _ListplaneStudentState extends State<ListplaneStudent> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'PLANE LIST',
+                            '      PLANE LIST',
                             style: TextStyle(
                               fontSize: 40,
                               fontWeight: FontWeight.bold,
                               color: Colors.black,
                             ),
                           ),
-                         IconButton(
+                          IconButton(
                             icon: const Icon(Icons.logout,
                                 color: Colors.black, size: 30),
                             onPressed: () {
@@ -95,7 +97,7 @@ class _ListplaneStudentState extends State<ListplaneStudent> {
                                           alignment: Alignment.topCenter,
                                           child: Icon(Icons.error_outline,
                                               color: Colors.orange,
-                                              size: 50), 
+                                              size: 50), // ไอคอนสีส้มตรงกลาง
                                         ),
                                         const SizedBox(height: 10),
                                         const Text(
@@ -115,16 +117,16 @@ class _ListplaneStudentState extends State<ListplaneStudent> {
                                         child: const Text("Cancel"),
                                         onPressed: () {
                                           Navigator.of(context)
-                                              .pop(); 
+                                              .pop(); // ปิด dialog
                                         },
                                       ),
                                       TextButton(
                                         child: const Text("Logout"),
                                         onPressed: () {
                                           Navigator.of(context)
-                                              .pop(); 
+                                              .pop(); // ปิด dialog ก่อน
 
-                                      
+                                          // แสดง SnackBar ความสำเร็จ
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             const SnackBar(
@@ -132,7 +134,7 @@ class _ListplaneStudentState extends State<ListplaneStudent> {
                                                 children: const [
                                                   Icon(Icons.check_circle,
                                                       color: Colors
-                                                          .green), 
+                                                          .green), // ไอคอนสีเขียว
                                                   SizedBox(width: 10),
                                                   Text(
                                                     "Logout successful",
@@ -149,7 +151,7 @@ class _ListplaneStudentState extends State<ListplaneStudent> {
                                             ),
                                           );
 
-                                        
+                                          // ไปยังหน้า Loginpage
                                           Navigator.pushReplacement(
                                             context,
                                             MaterialPageRoute(
@@ -164,6 +166,8 @@ class _ListplaneStudentState extends State<ListplaneStudent> {
                               );
                             },
                           ),
+                        ],
+                      ),
                       const SizedBox(height: 24),
                       isLoading
                           ? const Center(child: CircularProgressIndicator())
@@ -248,9 +252,9 @@ class _ListplaneStudentState extends State<ListplaneStudent> {
 
     return InkWell(
       onTap: isAvailable || isPending
-          ? () {
-              Navigator.push(
-                context,
+          ? () async {
+          final result = await Navigator.push(
+            context,
                 MaterialPageRoute(
                   builder: (context) => PlaneDetailStudentPage(
                     imagePath: imagePath,
@@ -262,8 +266,12 @@ class _ListplaneStudentState extends State<ListplaneStudent> {
                   ),
                 ),
               );
-            }
-          : null,
+             
+          if (result == true) {
+            _fetchPlanes();
+          }
+        }
+      : null,
       child: cardContent,
     );
   }
@@ -321,10 +329,66 @@ class _PlaneDetailStudentPageState extends State<PlaneDetailStudentPage> {
       });
     }
   }
+  
 
-  void dummyRentFunction() {
-    print("RENT NOW clicked!");
+ Future<void> _submitRentData() async {
+  if (borrowDate == null || returnDate == null) return;
+
+  // ดึง user ID จาก SharedPreferences
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  final String? userId = prefs.getString('user_id'); // เก็บ user ID ใน SharedPreferences
+
+  if (userId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("User not logged in"),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
   }
+
+  try {
+    final response = await http.post(
+      Uri.parse('http://192.168.1.3:3000/student/rent'), // API Endpoint
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'planeName': widget.planeName,
+        'rqtBy': userId,
+        'bDate': formatDate(borrowDate!),
+        'rDate': formatDate(returnDate!),
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Rent successful"),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+     
+      Navigator.of(context).pop(true); // ส่งค่า true กลับไปเพื่อบอกให้ ListplaneStudent รีเฟรช
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Failed to rent: ${response.body}"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Error submitting rent data"),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -456,6 +520,15 @@ class _PlaneDetailStudentPageState extends State<PlaneDetailStudentPage> {
                             ),
                           ],
                         ),
+                        if (borrowDate != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: Text(
+                              ' ${formatDate(borrowDate!)}', //borrow date
+                              style: const TextStyle(
+                                  fontSize: 16, color: Colors.black),
+                            ),
+                          ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -469,10 +542,19 @@ class _PlaneDetailStudentPageState extends State<PlaneDetailStudentPage> {
                             ),
                           ],
                         ),
+                        if (returnDate != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: Text(
+                              ' ${formatDate(returnDate!)}', // return date
+                              style: const TextStyle(
+                                  fontSize: 16, color: Colors.black),
+                            ),
+                          ),
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: (borrowDate != null && returnDate != null)
-                              ? dummyRentFunction
+                              ? _submitRentData
                               : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
@@ -484,7 +566,7 @@ class _PlaneDetailStudentPageState extends State<PlaneDetailStudentPage> {
                                 Colors.white, // Text color set to white
                           ),
                           child: const Text('RENT NOW'),
-                        )
+                        ),
                       ],
                     ),
                 ],
@@ -496,3 +578,6 @@ class _PlaneDetailStudentPageState extends State<PlaneDetailStudentPage> {
     );
   }
 }
+
+
+
