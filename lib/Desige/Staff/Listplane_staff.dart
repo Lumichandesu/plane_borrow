@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'AddPlane.dart';
-import 'Editplane.dart';
 import 'package:plane_borrow/pages/Loginpage.dart';
 
 class ListplaneStaff extends StatefulWidget {
@@ -221,13 +220,7 @@ class _ListPlaneState extends State<ListplaneStaff> {
                 ),
                 GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const Editplane(
-                                plane: {}, // Pass the necessary plane data
-                              )),
-                    );
+                    // Implement Editplane navigation here if required
                   },
                   child: Image.asset(
                     'assets/images/editing.png',

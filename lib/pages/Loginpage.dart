@@ -36,7 +36,7 @@ class _LoginpageState extends State<Loginpage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:3000/login'), // Ensure the URL matches your API
+        Uri.parse('http://localhost:3000/login'), 
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -54,24 +54,25 @@ class _LoginpageState extends State<Loginpage> {
           await prefs.setString('auth_token', user['token']);
         }
 
-        print(user); //Just check the token
+        print(user); 
 
         if (user['role_id'] == 1) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const HomeStudent()),
-          );
-        } else if (user['role_id'] == 2) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const HomeStaff()),
-          );
-        } else if (user['role_id'] == 3) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const HomeLecture()),
-          );
-        }
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(builder: (context) => HomeStudent(userId: user['id'].toString())), // Convert to String
+  );
+} else if (user['role_id'] == 2) {
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(builder: (context) => HomeStaff(userId: user['id'].toString())), // Convert to String
+  );
+} else if (user['role_id'] == 3) {
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(builder: (context) => HomeLecture(userId: user['id'].toString())), // Convert to String
+  );
+}
+
       } else {
         final errorResponse = jsonDecode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -124,7 +125,6 @@ class _LoginpageState extends State<Loginpage> {
                     ),
                     const SizedBox(height: 100),
 
-                    // Username input
                     TextField(
                       controller: _usernameController,
                       decoration: InputDecoration(
@@ -137,7 +137,6 @@ class _LoginpageState extends State<Loginpage> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Password input
                     TextField(
                       controller: _passwordController,
                       obscureText: true,
@@ -151,7 +150,6 @@ class _LoginpageState extends State<Loginpage> {
                     ),
                     const SizedBox(height: 100),
 
-                    // Login button
                     ElevatedButton(
                       onPressed: _isLoading ? null : _login,
                       style: ElevatedButton.styleFrom(
@@ -173,7 +171,6 @@ class _LoginpageState extends State<Loginpage> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Register link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [

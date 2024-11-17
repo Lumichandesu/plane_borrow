@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class HistoryStaff extends StatelessWidget {
-  const HistoryStaff({super.key});
+  final String userId; // Add userId parameter
+
+  const HistoryStaff({super.key, required this.userId});
 
   @override
   Widget build(BuildContext context) {
@@ -11,15 +13,12 @@ class HistoryStaff extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Background image
           Positioned.fill(
             child: Image.asset(
               'assets/images/airplane.jpg',
               fit: BoxFit.cover,
             ),
           ),
-
-          // Main History content
           Positioned.fill(
             child: ListView(
               padding: EdgeInsets.only(top: screenHeight * 0.1),
@@ -38,7 +37,6 @@ class HistoryStaff extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header with title and logout button
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -54,12 +52,9 @@ class HistoryStaff extends StatelessWidget {
                               ),
                             ),
                           ),
-                          
                         ],
                       ),
                       SizedBox(height: screenHeight * 0.03),
-
-                      // History Cards
                       _buildHistoryCard(
                         context: context,
                         airplaneImage:
@@ -97,7 +92,6 @@ class HistoryStaff extends StatelessWidget {
     );
   }
 
-  // Method to build history card
   Widget _buildHistoryCard({
     required BuildContext context,
     required String airplaneImage,
@@ -123,7 +117,6 @@ class HistoryStaff extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Airplane image and model name
               Row(
                 children: [
                   Image.asset(
@@ -145,8 +138,6 @@ class HistoryStaff extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-
-              // Staff and Approved by information on the same line
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -156,8 +147,6 @@ class HistoryStaff extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-
-              // Borrowing details
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -170,8 +159,6 @@ class HistoryStaff extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-
-              // Action text (Return or Rejected)
               Center(
                 child: Text(
                   actionText,
@@ -189,7 +176,6 @@ class HistoryStaff extends StatelessWidget {
     );
   }
 
-  // Widget to build info row with an icon
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Row(
       children: [
@@ -202,7 +188,6 @@ class HistoryStaff extends StatelessWidget {
     );
   }
 
-  // Widget to build date columns
   Widget _buildDateColumn(String label, String date) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,

@@ -5,7 +5,9 @@ import 'package:plane_borrow/Desige/lecture/Listplane_lecture.dart';
 import 'package:plane_borrow/Desige/lecture/Requestlist_lecture.dart';
 
 class HomeLecture extends StatefulWidget {
-  const HomeLecture({super.key});
+  final String userId; // Add userId parameter
+
+  const HomeLecture({super.key, required this.userId});
 
   @override
   State<HomeLecture> createState() => _AppbarstudentState();
@@ -26,14 +28,12 @@ class _AppbarstudentState extends State<HomeLecture> {
             ),
           ),
           backgroundColor: Colors.black,
-          
         ),
         bottomNavigationBar: Container(
           color: Colors.black,
           child: const TabBar(
-            labelColor:
-                Color.fromARGB(255, 251, 96, 85), // สีของข้อความที่ถูกเลือก
-            unselectedLabelColor: Colors.white, // สีของข้อความที่ไม่ได้ถูกเลือก
+            labelColor: Color.fromARGB(255, 251, 96, 85),
+            unselectedLabelColor: Colors.white,
             labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             tabs: [
               Tab(
@@ -55,12 +55,12 @@ class _AppbarstudentState extends State<HomeLecture> {
             ],
           ),
         ),
-        body: const TabBarView(
+        body: TabBarView(
           children: [
-            Listplanelecture(),
-            Requestlistlecture(),
-            DashboardLecture(),
-            HistoryLecture()
+            const Listplanelecture(),
+            const Requestlistlecture(),
+            const DashboardLecture(),
+            HistoryLecture(userId: widget.userId),
           ],
         ),
       ),

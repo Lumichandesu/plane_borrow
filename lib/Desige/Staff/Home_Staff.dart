@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:plane_borrow/Desige/Staff/Listplane_staff.dart';
-import 'History_staff.dart';
-import 'dashboard_staff.dart'; // Make sure this import is correct
+import 'History_Staff.dart';
+import 'Listplane_staff.dart';
 import 'Return_staff.dart';
+import 'dashboard_staff.dart'; // Make sure this import is correct
 
 class HomeStaff extends StatefulWidget {
-  const HomeStaff({super.key});
+  final String userId; // Add userId parameter
+  const HomeStaff({super.key, required this.userId});
 
   @override
   State<HomeStaff> createState() => _AppbarstudentState();
@@ -30,8 +31,8 @@ class _AppbarstudentState extends State<HomeStaff> {
         bottomNavigationBar: Container(
           color: Colors.black,
           child: const TabBar(
-            labelColor: Color.fromARGB(255, 251, 96, 85), // Selected text color
-            unselectedLabelColor: Colors.white, // Unselected text color
+            labelColor: Color.fromARGB(255, 251, 96, 85),
+            unselectedLabelColor: Colors.white,
             labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             tabs: [
               Tab(
@@ -44,7 +45,7 @@ class _AppbarstudentState extends State<HomeStaff> {
               ),
               Tab(
                 icon: Icon(Icons.dashboard),
-                text: 'Dashboard', // Fixed typo here (from 'Dashbord' to 'Dashboard')
+                text: 'Dashboard',
               ),
               Tab(
                 icon: Icon(Icons.watch_later_rounded),
@@ -53,12 +54,12 @@ class _AppbarstudentState extends State<HomeStaff> {
             ],
           ),
         ),
-        body: TabBarView( // Removed `const` here
+        body: TabBarView(
           children: [
             ListplaneStaff(),
             ReturnStaff(),
-            DashboardStaff(), // Corrected the widget name here
-            HistoryStaff()
+            DashboardStaff(),
+            HistoryStaff(userId: widget.userId), // Pass the userId here
           ],
         ),
       ),

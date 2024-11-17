@@ -1,55 +1,54 @@
+import 'dart:io'; // For handling file paths
 import 'package:flutter/material.dart';
-import 'AddPlane.dart';
+import 'package:image_picker/image_picker.dart'; // For picking images
 
-class Editplane extends StatefulWidget {
-  final Map<String, dynamic> plane; // รับข้อมูล plane เป็น parameter
-  const Editplane({super.key, required this.plane});
-
-  // Add other planes similarly
+class EditPlane extends StatefulWidget {
+  const EditPlane({super.key});
 
   @override
-  State<Editplane> createState() => _Editplane();
+  _EditPlaneState createState() => _EditPlaneState();
 }
 
-class _Editplane extends State<Editplane> {
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-  // Declare a variable to hold the toggle switch state
-  void _showChangeAlert() {
+class _EditPlaneState extends State<EditPlane> {
+  TextEditingController _planeNameController =
+      TextEditingController(text: "Diamond DA40");
+  TextEditingController _seatsController =
+      TextEditingController(text: "4 Seats");
+  TextEditingController _tailNumberController =
+      TextEditingController(text: "N12345");
+  TextEditingController _descriptionController = TextEditingController(
+      text:
+          "The cockpit is glass-panel equipped with avionics like the Garmin G1000 system (in most configurations), providing navigation, autopilot, and flight management systems. This makes the aircraft easy to fly and enhances situational awareness for the pilot.");
+
+  File? _imageFile; // To hold the selected image
+  bool _isAvailable = true; // Track the availability status
+
+  // Function to handle editing text
+  void _editTextField(String field, TextEditingController controller) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (context) {
         return AlertDialog(
-          title: const Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.error_outline,
-                  color: Colors.orange, size: 80), // Larger icon
-              SizedBox(height: 8),
-              Text(
-                'Confirm Change',
-                style: TextStyle(fontSize: 20), // Larger title text
-                textAlign: TextAlign.center,
-              ),
-            ],
+          title: Text('Edit $field'),
+          content: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              hintText: 'Enter $field',
+            ),
           ),
-          content: const Text(
-            'Are you sure you want to make this change?',
-            textAlign: TextAlign.center, // Center the content text
-          ),
-          actions: <Widget>[
+          actions: [
             TextButton(
-              child: const Text('CANCEL'),
               onPressed: () {
-                Navigator.of(context).pop();
+                setState(() {});
+                Navigator.pop(context);
               },
+              child: const Text('Save'),
             ),
             TextButton(
-              child: const Text('OK'),
               onPressed: () {
-                Navigator.of(context).pop();
-                _showCompletionAlert();
+                Navigator.pop(context);
               },
+              child: const Text('Cancel'),
             ),
           ],
         );
@@ -57,36 +56,42 @@ class _Editplane extends State<Editplane> {
     );
   }
 
-  void _showCompletionAlert() {
+  // Function to pick image from the gallery
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedFile =
+        await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile =
+            File(pickedFile.path); // Update the image with the selected file
+      });
+    }
+  }
+
+  // Function to show the confirmation dialog when saving changes
+  void _showSaveConfirmationDialog() {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (context) {
         return AlertDialog(
-          title: const Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.task_alt,
-                color: Colors.green,
-                size: 80,
-              ),
-              SizedBox(
-                height: 20,
-              ),
-              Text(
-                'Change Complete',
-                style: TextStyle(fontSize: 20), // Larger title text
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-          content: const Text('Your change has been successfully completed.'),
-          actions: <Widget>[
+          title: const Text('Are you sure?'),
+          content: const Text('Do you want to save the changes?'),
+          actions: [
             TextButton(
-              child: const Text('OK'),
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.pop(context); // Close the dialog
+                // Handle the save action here
+                // For example, you can add logic to save the data or perform actions
               },
+              child: const Text('Yes'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog
+              },
+              child: const Text('No'),
             ),
           ],
         );
@@ -94,397 +99,204 @@ class _Editplane extends State<Editplane> {
     );
   }
 
-  bool isSwitched = false;
-  bool _isEditing = false;
-  String seatText = "4 SEAT";
-  String planeText = "N7230";
-  bool isEditingSeat = false;
-  bool isEditingPlane = false; // ตัวแปรควบคุมโหมดการแก้ไข
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/airplane.jpg',
-              fit: BoxFit.cover,
-            ),
-          ),
-          // Add button using GestureDetector
-          Positioned(
-            top: 30,
-            left: 16,
-            child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AddPlane(),
-                  ),
-                );
-              },
-              child: const Icon(
-                Icons.add_circle_outline,
-                color: Colors.white,
-                size: 30,
+      body: SingleChildScrollView(
+        // Wrap the content inside SingleChildScrollView
+        child: Stack(
+          children: [
+            // Back button
+            Positioned(
+              top: 40,
+              left: 16,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                onPressed: () => Navigator.pop(context),
+                padding: const EdgeInsets.all(0),
+                iconSize: 28,
+                splashRadius: 24,
               ),
             ),
-          ),
-          // Logout button
-          Positioned(
-            top: 16,
-            right: 16,
-            child: IconButton(
-              icon: const Icon(Icons.logout, color: Colors.white, size: 30),
-              onPressed: () {},
-            ),
-          ),
-          // Scrollable area with both boxes
-          Positioned.fill(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.only(top: 180),
-              child: Column(
-                children: [
-                  // Box 1 (CESSNA 127 and SKYHAWK)
-                  Container(
-                    width: double.infinity,
-                    height: 160,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(50),
-                        topRight: Radius.circular(50),
-                      ),
+
+            // Main content
+            Align(
+              alignment: Alignment.topCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 100, left: 16, right: 16),
+                child: Column(
+                  children: [
+                    // Availability Toggle Switch moved above the image
+                    const Text(
+                      'STATUS ',
+                      style: TextStyle(fontSize: 20),
                     ),
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const Text(
-                              'CESSANA 172', // แสดง TitleName
-                              style: TextStyle(
-                                fontSize: 25,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                            const SizedBox(width: 30),
-                            Opacity(
-                              opacity: 1,
-                              child: Image.asset(
-                                'assets/images/editing.png',
-                                height: 24,
-                                width: 24,
-                              ),
-                            ),
-                          ],
+                        Switch(
+                          value: _isAvailable,
+                          onChanged: (bool value) {
+                            setState(() {
+                              _isAvailable = value;
+                            });
+                          },
                         ),
-                        const SizedBox(height: 0),
-                        // const Text(
-                        //   '    SKYHAWK',
-                        //   style: TextStyle(
-                        //     fontSize: 25,
-                        //     fontWeight: FontWeight.bold,
-                        //     color: Colors.black,
-                        //   ),
-                        // ),
+                        Text(
+                          _isAvailable ? 'Available' : 'Disabled',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: _isAvailable ? Colors.green : Colors.red,
+                          ),
+                        ),
                       ],
                     ),
-                  ),
-                  // Stack to overlay the image between Box 1 and Box 2
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      // Box 2 (Additional Information)
-                      Transform.translate(
-                        offset: const Offset(0, -50),
-                        child: Container(
-                          width: double.infinity,
-                          height: 1000,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(50),
-                              topRight: Radius.circular(50),
-                            ),
-                          ),
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 700),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 32, vertical: 15),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(30),
-                                      side: const BorderSide(color: Colors.red),
-                                    ),
-                                    backgroundColor: Colors.white,
-                                  ),
-                                  onPressed: _showChangeAlert,
-                                  child: const Text(
-                                    'SAVE CHANGES',
-                                    style: TextStyle(
-                                        color: Colors.red, fontSize: 15),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      // Image positioned between the two boxes
-                      Positioned(
-                        top:
-                            -160, // Adjust the position to overlay between Box 1 and Box 2
-                        left: 120,
-                        right: 0,
-                        child: Align(
-                          alignment: Alignment.center,
-                          child: Image.asset(
-                            'assets/images/CESSANA 172.png', // Replace with your image
-                            height: 260,
-                            width: 300,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-                      // Category button and add icon
-                      Positioned(
-                        top: 50, // Adjust to place under the image
-                        left: 30, // Align to the left
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 15, vertical: 5),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(30),
-                                      side:
-                                          const BorderSide(color: Colors.black),
-                                    ),
-                                    backgroundColor: Colors.white,
-                                  ),
-                                  onPressed: () {},
-                                  child: const Text(
-                                    'General Aviation',
-                                    style: TextStyle(
-                                        color: Colors.black, fontSize: 11),
-                                  ),
-                                ),
-                                const SizedBox(width: 0),
-                                IconButton(
-                                  icon: const Icon(Icons.add_circle_outline,
-                                      color: Colors.black, size: 30),
-                                  onPressed: () {},
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            // Borrow Status Row
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment
-                                  .spaceBetween, // Align elements
-                              children: [
-                                const Text(
-                                  'BORROW STATUS',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                const SizedBox(width: 50),
-                                ElevatedButton.icon(
-                                  icon: const Icon(Icons.flight_class,
-                                      color:
-                                          Color.fromRGBO(155, 153, 153, 0.824),
-                                      size: 20),
-                                  label: const Text(
-                                    '4 SEAT',
-                                    style: TextStyle(
-                                        color: Color.fromRGBO(
-                                            133, 133, 133, 0.824),
-                                        fontSize: 12),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 35, vertical: 5),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                      side: const BorderSide(
-                                          color: Color.fromRGBO(
-                                              155, 153, 153, 0.824)),
-                                    ),
-                                    backgroundColor: Colors.white,
-                                  ),
-                                  onPressed: () {},
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            // Toggle switch and label
-                            Row(
-                              children: [
-                                const SizedBox(width: 0),
-                                Text(
-                                  isSwitched ? 'Available' : 'Unavailable',
-                                  style: TextStyle(
-                                    color: isSwitched
-                                        ? Colors.green
-                                        : Colors
-                                            .red, // Change color based on state
-                                    fontSize: 19,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(width: 15),
-                                Switch(
-                                  value: isSwitched,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      isSwitched =
-                                          value; // Update the toggle state
-                                    });
-                                  },
-                                  activeColor: Colors
-                                      .orange, // Color when the switch is on
-                                  inactiveThumbColor: const Color.fromARGB(
-                                      255,
-                                      187,
-                                      187,
-                                      187), // Color when the switch is off
-                                ),
-                                const SizedBox(width: 39),
-                                ElevatedButton.icon(
-                                  icon: const Icon(Icons.local_airport,
-                                      color:
-                                          Color.fromRGBO(155, 153, 153, 0.824),
-                                      size: 20),
-                                  label: const Text(
-                                    'N72370',
-                                    style: TextStyle(
-                                        color: Color.fromRGBO(
-                                            133, 133, 133, 0.824),
-                                        fontSize: 12),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 35, vertical: 5),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                      side: const BorderSide(
-                                          color: Color.fromRGBO(
-                                              155, 153, 153, 0.824)),
-                                    ),
-                                    backgroundColor: Colors.white,
-                                  ),
-                                  onPressed: () {},
-                                ),
-                              ],
-                            ),
+                    const SizedBox(height: 16), // Add some spacing
 
-                            const SizedBox(height: 40),
-                            Positioned(
-                              left: 100,
-                              right: -200,
-                              top: 500,
-                              child: Container(
-                                width: 350,
-                                height: 300,
-                                decoration: BoxDecoration(
-                                  color:
-                                      const Color.fromARGB(255, 255, 255, 255),
-                                  borderRadius: BorderRadius.circular(15),
-                                  border: Border.all(
-                                    color: const Color.fromARGB(
-                                        255, 184, 184, 184),
-                                    width: 2.0,
-                                  ),
+                    // Message above the image
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        'Click item you want to edit',
+                        style: TextStyle(fontSize: 30, color: Colors.black),
+                      ),
+                    ),
+                    // Display the current image or a default image
+                    _imageFile != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Image.file(
+                              _imageFile!,
+                              height: 200,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            ),
+                          )
+                        : Image.asset(
+                            "assets/images/Diamond DA40.png", // Default image if no image is picked
+                            fit: BoxFit.cover,
+                            height: 200,
+                            width: double.infinity,
+                          ),
+                    const SizedBox(height: 16),
+                    // Button to change the image
+                    ElevatedButton(
+                      onPressed: _pickImage, // Trigger the image picker
+                      child: const Text('Change Image'),
+                    ),
+                    const SizedBox(height: 16),
+                    // Editable Plane Name
+                    GestureDetector(
+                      onTap: () =>
+                          _editTextField('Plane Name', _planeNameController),
+                      child: Text(
+                        _planeNameController.text,
+                        style: const TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'General Aviation', // Static text for category
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 16),
+                    // Row with Seats and Tail Number
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        // Editable Seats with fixed width
+                        GestureDetector(
+                          onTap: () =>
+                              _editTextField('Seats', _seatsController),
+                          child: Container(
+                            width: 150, // Fixed width for consistency
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.event_seat,
+                                    color: Colors.grey),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _seatsController.text,
+                                  style: const TextStyle(fontSize: 16),
                                 ),
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // ไอคอนแก้ไขอยู่ขวาสุด
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment
-                                          .end, // ให้ไอคอนอยู่ทางขวา
-                                      children: [
-                                        GestureDetector(
-                                          onTap: () {
-                                            setState(() {
-                                              _isEditing =
-                                                  !_isEditing; // สลับโหมดการแก้ไข
-                                            });
-                                          },
-                                          child: Icon(
-                                            _isEditing
-                                                ? Icons.check
-                                                : Icons
-                                                    .edit, // เปลี่ยนไอคอนตามโหมด
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 16),
-                                    // TextField for title
-                                    TextField(
-                                      controller: _titleController,
-                                      decoration: const InputDecoration(
-                                        hintText: 'Enter title here',
-                                        border: InputBorder.none,
-                                      ),
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      readOnly:
-                                          !_isEditing, // ตั้งให้แก้ไขได้เมื่อเป็นโหมดแก้ไข
-                                    ),
-                                    const SizedBox(height: 8),
-                                    // TextField for description
-                                    TextField(
-                                      controller: _descriptionController,
-                                      decoration: const InputDecoration(
-                                        hintText: 'TEXT',
-                                        border: InputBorder.none,
-                                      ),
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        color:
-                                            Color.fromARGB(255, 109, 104, 104),
-                                      ),
-                                      readOnly:
-                                          !_isEditing, // ตั้งให้แก้ไขได้เมื่อเป็นโหมดแก้ไข
-                                    ),
-                                  ],
+                              ],
+                            ),
+                          ),
+                        ),
+                        // Editable Tail Number with fixed width
+                        GestureDetector(
+                          onTap: () => _editTextField(
+                              'Tail Number', _tailNumberController),
+                          child: Container(
+                            width: 150, // Fixed width for consistency
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.airplanemode_active,
+                                    color: Colors.grey),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _tailNumberController.text,
+                                  style: const TextStyle(fontSize: 16),
                                 ),
-                              ),
-                            )
-                          ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    // Editable Plane Description
+                    GestureDetector(
+                      onTap: () =>
+                          _editTextField('Description', _descriptionController),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Text(
+                          _descriptionController.text,
+                          style:
+                              const TextStyle(fontSize: 16, color: Colors.grey),
+                          textAlign: TextAlign.center,
                         ),
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
             ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16),
+        child: ElevatedButton(
+          onPressed:
+              _showSaveConfirmationDialog, // Show the confirmation dialog
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.black, // Button color
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
+            ),
           ),
-        ],
+          child: const Text(
+            'Save Changes',
+            style: TextStyle(color: Colors.white, fontSize: 18),
+          ),
+        ),
       ),
     );
   }

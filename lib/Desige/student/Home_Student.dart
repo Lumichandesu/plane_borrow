@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'Listplane_Student.dart';
 import 'Request_Student.dart';
-import 'History_Student3.dart';
+import 'History_Student.dart';
 
 class HomeStudent extends StatefulWidget {
   final String userId; // เพิ่ม userId เพื่อเก็บค่า id ของผู้ใช้
