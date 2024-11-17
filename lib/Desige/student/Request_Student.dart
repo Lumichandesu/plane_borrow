@@ -1,89 +1,183 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:intl/intl.dart';
 
-class RequestStudent extends StatelessWidget {
-  const RequestStudent({super.key});
+class RequestStudent extends StatefulWidget {
+  final String userId;
+  const RequestStudent({super.key, required this.userId});
+
+  @override
+  _RequestStudentState createState() => _RequestStudentState();
+}
+
+class _RequestStudentState extends State<RequestStudent> with AutomaticKeepAliveClientMixin {
+  List<Map<String, dynamic>> requests = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchRequest();
+  }
+
+  Future<void> _fetchRequest() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final response = await http.get(
+        Uri.parse('http://192.168.1.3:3000/RequestStudent/${widget.userId}'),
+      );
+
+      print('User ID for API request: ${widget.userId}');
+      print('Response status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        List jsonResponse = json.decode(response.body);
+        setState(() {
+          requests = jsonResponse.cast<Map<String, dynamic>>();
+          isLoading = false;
+        });
+      } else {
+        print('Failed to load requests: ${response.statusCode}');
+        setState(() {
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching requests: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    await _fetchRequest();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.of(context).size.width;
-    final double screenHeight = MediaQuery.of(context).size.height;
+    super.build(context);
 
     return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/airplane.jpg',
-              fit: BoxFit.cover,
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage('assets/images/airplane.jpg'),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
             ),
-          ),
-          Positioned.fill(
-            child: ListView(
-              padding: EdgeInsets.only(top: screenHeight * 0.1),
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(50),
-                      topRight: Radius.circular(50),
+            if (isLoading)
+              const Center(child: CircularProgressIndicator())
+            else
+              ListView(
+                children: [
+                  Container(
+                    margin: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.1),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(50),
+                        topRight: Radius.circular(50),
+                      ),
                     ),
-                  ),
-                  padding: EdgeInsets.symmetric(
-                    vertical: screenHeight * 0.03,
-                    horizontal: screenWidth * 0.04,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Center(
-                          child: Text(
-                            'Request Status',
-                            style: TextStyle(
-                              fontSize: screenHeight * 0.04,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
+                    padding: EdgeInsets.symmetric(
+                      vertical: MediaQuery.of(context).size.height * 0.03,
+                      horizontal: MediaQuery.of(context).size.width * 0.04,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Center(
+                            child: Text(
+                              'REQUEST STATUS',
+                              style: TextStyle(
+                                fontSize: MediaQuery.of(context).size.height * 0.04,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      SizedBox(height: screenHeight * 0.03),
-                      _buildHistoryCard(
-                        context: context,
-                        airplaneImage:
-                            'assets/images/Beechcraft Bonanza G36.png',
-                        modelName: 'Beechcraft Bonanza G36',
-                        requestDate: '21-10-2024',
-                        returnDate: '22-10-2024',
-                        ButtonText: 'Pending',
-                        ButtonColor: Colors.yellow,
-                      ),
-                      _buildHistoryCard(
-                        context: context,
-                        airplaneImage: 'assets/images/CESSANA 172.png',
-                        modelName: 'Beechcraft Bonanza G36',
-                        requestDate: '21-10-2024',
-                        returnDate: '22-10-2024',
-                        ButtonText: 'Approve',
-                        ButtonColor: Colors.green,
-                      ),
-                    ],
+                        const SizedBox(height: 20),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: NeverScrollableScrollPhysics(),
+                          padding: EdgeInsets.only(top: 16),
+                          itemCount: requests.isEmpty ? 1 : requests.length,
+                          itemBuilder: (context, index) {
+                            if (requests.isEmpty) {
+                              return Center(
+                                child: Padding(
+                                  padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.3),
+                                  child: const Text(
+                                    'No requests available.',
+                                    style: TextStyle(fontSize: 18, color: Colors.black),
+                                  ),
+                                ),
+                              );
+                            }
+
+                            final request = requests[index];
+                            return _buildHistoryCard(
+                              context: context,
+                              airplaneImage: request['planeImage'] ?? 'default_image.png',
+                              modelName: request['planeName'] ?? 'Unknown Model',
+                              requesterName: request['requestName'] ?? 'N/A',
+                              requestDate: _formatDate(request['bDate'] ?? 'N/A'),
+                              returnDate: _formatDate(request['rDate'] ?? 'N/A'),
+                              ButtonText: request['rqtStatus'] == null
+                                  ? 'Pending'
+                                  : (request['rqtStatus'] == 1
+                                      ? 'Approved'
+                                      : 'Rejected'),
+                              ButtonColor: request['rqtStatus'] == null
+                                  ? Colors.orange
+                                  : (request['rqtStatus'] == 1
+                                      ? Colors.green
+                                      : Colors.red),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-        ],
+                ],
+              ),
+          ],
+        ),
       ),
     );
+  }
+
+  String _formatDate(String date) {
+    try {
+      final parsedDate = DateTime.parse(date).toLocal();
+      return DateFormat('yyyy-MM-dd').format(parsedDate);
+    } catch (e) {
+      print('Error parsing date: $e');
+      return 'Invalid Date';
+    }
   }
 
   Widget _buildHistoryCard({
     required BuildContext context,
     required String airplaneImage,
     required String modelName,
+    required String requesterName,
     required String requestDate,
     required String returnDate,
     required String ButtonText,
@@ -103,7 +197,7 @@ class RequestStudent extends StatelessWidget {
               Row(
                 children: [
                   Image.asset(
-                    airplaneImage,
+                    'assets/images/$airplaneImage',
                     width: 120,
                     height: 80,
                     fit: BoxFit.cover,
@@ -122,9 +216,10 @@ class RequestStudent extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Borrower',
+                'Borrower:',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
+              Text(requesterName),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -157,9 +252,14 @@ class RequestStudent extends StatelessWidget {
       children: [
         Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
         const SizedBox(height: 4),
-        Text(date,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Text(
+          date,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
       ],
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }
