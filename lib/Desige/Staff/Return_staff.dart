@@ -22,7 +22,7 @@ class _ReturnStaffState extends State<ReturnStaff> {
   Future<List<ReturnItem>> fetchReturnItems() async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.8:3000/Returnplane'),
+        Uri.parse('http://localhost:3000/Returnplane'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -252,7 +252,7 @@ Widget _buildReturnCard({
 Future<void> updateReturnStatus(BuildContext context, int rqtBy) async {
     try {
       final response = await http.put(
-        Uri.parse('http://192.168.1.8:3000/UpdateReturnStatus/$rqtBy'),
+        Uri.parse('http://localhost:3000/UpdateReturnStatus/$rqtBy'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'status': 1}),
       );
