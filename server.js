@@ -277,34 +277,62 @@ app.put('/student/return/:planeID', (req, res) => {
 
 
 
-// Staff-Return
-//ตัวนี้ต้องมีข้อมูลในดาต้าเบส เอาตัวเลขใน requestID ในdatabaseแทนที่ :request_id ของurl ถึงจะใช้งานได้
-app.put('/Returnplane/:request_id', function (req, res) {
-  const requestID = req.params.request_id; // ใช้ request_id จาก URL ที่ถูกต้อง
-  const { rqtStatus } = req.body; // รับข้อมูลที่ต้องการอัปเดต
+// Staff-Return แสดงข้อมูล
+app.get('/Returnplane', (req, res) => {
+  const query = `
+    SELECT 
+    h1.planeId, h1.rqtBy, h1.bDate, h1.rDate, h1.approved, h1.Lender, 
+    h1.ApprovedStatus, h1.ReturnStaus, u1.username AS rqtByName, 
+    p.planeName, p.image, u2.username AS LenderName, 
+    u3.username AS StaffName
+  FROM history h1
+  INNER JOIN users u1 ON h1.rqtBy = u1.id               
+  INNER JOIN users u2 ON h1.Lender = u2.id
+  INNER JOIN users u3 ON h1.approved = u3.id
+  JOIN Plane p ON h1.planeId = p.planeId
+  WHERE h1.ReturnStaus != 1  
+    AND (h1.ApprovedStatus IS NOT NULL AND h1.ApprovedStatus != 0)
+  `;
 
-  // ตรวจสอบข้อมูลที่ส่งมา
-  if (requestID && rqtStatus) {
-    // SQL query เพื่ออัปเดตสถานะใน rqtplane
-    const sql = "UPDATE `rqtplane` SET rqtStatus = ? WHERE requestID = ?";
-
-    db.query(sql, [rqtStatus, requestID], (err, results) => {
-      if (err) {
-        console.error("Error updating request:", err);
-        return res.status(500).json({ error: "Database server error" });
-      }
-
-      if (results.affectedRows === 0) {
-        return res.status(404).json({ message: "data not found" });
-      }
-
-      return res.status(200).json({ message: "updated successfully", requestBody: req.body });
-    });
-  } else {
-    res.status(400).json({ error: 'fail' });
-  }
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err);
+      return res.status(500).json({ error: 'Error retrieving data from database' });
+    }
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'No requests found' });
+    }
+    res.status(200).json(results);
+  });
 });
+//อัพเดตข้อมูล
+app.put('/UpdateReturnStatus/:rqtBy', (req, res) => {
+  const { status } = req.body;
+  const { rqtBy } = req.params;
 
+  if (status == null || rqtBy == null) {
+    return res.status(400).json({ error: 'Please provide rqtBy and status' });
+  }
+
+  const query = `
+    UPDATE history
+    SET ReturnStaus = ?
+    WHERE rqtBy = ?;
+  `;
+
+  db.query(query, [status, rqtBy], (err, result) => {
+    if (err) {
+      console.error('Error executing query:', err);
+      return res.status(500).json({ error: 'Error updating return status in the database' });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Record not found' });
+    }
+    res.status(200).json({ message: 'Return status updated successfully' });
+    console.log(req.body); // ตรวจสอบว่าได้รับข้อมูลหรือไม่
+    console.log('SQL Query:', query);
+  });
+});
 // ============== Dashboard ====================
 
 //Staff-Dashboard
@@ -485,14 +513,33 @@ app.post('/HistoryStudent/:userId', (req, res) => {
 
 // Staff-History
 app.post("/HistoryStaff", function (req, res) {
-  let sql = 'SELECT * FROM `history`';
+  let sql = `
+  SELECT 
+    h1.planeId, h1.rqtBy, h1.bDate, h1.rDate, h1.approved, h1.Lender, 
+    h1.ApprovedStatus, h1.ReturnStaus, u1.username AS rqtByName, 
+    p.planeName, p.image, u2.username AS LenderName, 
+    u3.username AS StaffName
+  FROM history h1
+  INNER JOIN users u1 ON h1.rqtBy = u1.id               
+  INNER JOIN users u2 ON h1.Lender = u2.id
+  INNER JOIN users u3 ON h1.approved = u3.id
+  JOIN Plane p ON h1.planeId = p.planeId`;
 
   db.query(sql, (err, results) => {
     if (err) {
       console.error('Database query error:', err);
       return res.status(500).json({ error: "Database server error" });
     }
-    console.log('Query results:', results);
+
+    console.log('Query Results:', results);  // ตรวจสอบผลลัพธ์จากฐานข้อมูล
+
+    if (results.length === 0) {
+      return res.status(404).json({
+        message: "No history available",
+        data: []
+      });
+    }
+
     return res.status(200).json({
       message: "Data retrieved successfully",
       data: results,
