@@ -10,7 +10,7 @@ class ReturnStaff extends StatefulWidget {
   State<ReturnStaff> createState() => _ReturnStaffState();
 }
 
-
+//ไม่ได้ดึงจากid แต่ดึงจาก ReturnStatus
 class _ReturnStaffState extends State<ReturnStaff> {
   List<Map<String, dynamic>> returnStatusData = [];
   @override
@@ -22,7 +22,7 @@ class _ReturnStaffState extends State<ReturnStaff> {
   Future<List<ReturnItem>> fetchReturnItems() async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/Returnplane'),
+        Uri.parse('http://192.168.1.8:3000/Returnplane'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -116,6 +116,7 @@ class _ReturnStaffState extends State<ReturnStaff> {
                                 requesterName: item.requesterName,
                                 rqtBy: item.rqtBy,
                                 ReturnStatus: item.ReturnStatus,
+                                planeID : item.planeId
                               );
                             },
                           ),
@@ -145,6 +146,7 @@ Widget _buildReturnCard({
   required String requesterName,
   required int rqtBy,
   required String ReturnStatus,
+  required int planeID,
 }) {
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -230,7 +232,7 @@ Widget _buildReturnCard({
                           title: 'Confirm Return',
                           content: 'Are you sure you want to return this plane?',
                           onConfirm: () {
-                            updateReturnStatus(context, rqtBy); // ใช้ rqtBy
+                            updateReturnStatus(context, rqtBy, planeID); // ใช้ rqtBy
                           },
                         );
                       },
@@ -249,30 +251,33 @@ Widget _buildReturnCard({
   );
 }
 
-Future<void> updateReturnStatus(BuildContext context, int rqtBy) async {
-    try {
-      final response = await http.put(
-        Uri.parse('http://localhost:3000/UpdateReturnStatus/$rqtBy'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'status': 1}),
-      );
+Future<void> updateReturnStatus(BuildContext context, int rqtBy, int planeID) async {
+  try {
+    final response = await http.put(
+      Uri.parse('http://192.168.1.8:3000/UpdateReturnStatus/$rqtBy'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'status': 1,      // อัปเดต ReturnStaus เป็น 1
+        'planeID': planeID // ระบุ planeID ที่ต้องการอัปเดต
+      }),
+    );
 
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Updated successfully!')),
-        );
-       
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update!')),
-        );
-      }
-    } catch (e) {
+    if (response.statusCode == 200) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        const SnackBar(content: Text('Updated successfully!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to update!')),
       );
     }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: $e')),
+    );
   }
+}
+
 
 
 Future<void> showConfirmationDialog({
