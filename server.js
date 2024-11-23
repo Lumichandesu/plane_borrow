@@ -307,32 +307,57 @@ app.get('/Returnplane', (req, res) => {
 });
 //อัพเดตข้อมูล
 app.put('/UpdateReturnStatus/:rqtBy', (req, res) => {
-  const { status } = req.body;
+  const { status, planeID } = req.body; // รับ planeID จาก body
   const { rqtBy } = req.params;
 
-  if (status == null || rqtBy == null) {
-    return res.status(400).json({ error: 'Please provide rqtBy and status' });
+  // ตรวจสอบว่า input ครบหรือไม่
+  if (status == null || rqtBy == null || planeID == null) {
+    return res.status(400).json({ error: 'Please provide rqtBy, status, and planeID' });
   }
 
-  const query = `
+  // คำสั่ง SQL
+  const updateHistoryQuery = `
     UPDATE history
     SET ReturnStaus = ?
     WHERE rqtBy = ?;
   `;
 
-  db.query(query, [status, rqtBy], (err, result) => {
+  const updatePlaneQuery = `
+    UPDATE plane
+    SET status = 1
+    WHERE planeID = ?;
+  `;
+
+  // อัปเดต history ก่อน
+  db.query(updateHistoryQuery, [status, rqtBy], (err, result) => {
     if (err) {
-      console.error('Error executing query:', err);
+      console.error('Error updating ReturnStaus:', err);
       return res.status(500).json({ error: 'Error updating return status in the database' });
     }
+
+    // ตรวจสอบว่า history ถูกอัปเดตสำเร็จ
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Record not found' });
+      return res.status(404).json({ message: 'No history record found for the given rqtBy' });
     }
-    res.status(200).json({ message: 'Return status updated successfully' });
-    console.log(req.body); // ตรวจสอบว่าได้รับข้อมูลหรือไม่
-    console.log('SQL Query:', query);
+
+    // อัปเดต plane status
+    db.query(updatePlaneQuery, [planeID], (err, result) => {
+      if (err) {
+        console.error('Error updating plane status:', err);
+        return res.status(500).json({ error: 'Error updating plane status in the database' });
+      }
+
+      // ตรวจสอบว่า plane ถูกอัปเดตสำเร็จ
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'No plane record found for the given planeID' });
+      }
+
+      // สำเร็จ
+      res.status(200).json({ message: 'Return status and plane status updated successfully' });
+    });
   });
 });
+
 // ============== Dashboard ====================
 
 //Staff-Dashboard
