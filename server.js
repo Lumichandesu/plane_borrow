@@ -416,12 +416,15 @@ app.get('/RequestStudent/:userId',  (req, res) => {
 app.get('/RequestLecture', (req, res) => {
   const query = `
     SELECT
+      r.requestID,
+      p.planeID, -- ตรวจสอบว่าฟิลด์นี้มีอยู่ในฐานข้อมูลและดึงออกมา
       p.image AS planeImage,
       p.planeName AS planeName,
       u.username AS requestName,
       r.bDate,
       r.rDate,
       r.rqtStatus
+      
     FROM rqtPlane r
     INNER JOIN users u ON r.rqtBy = u.id
     INNER JOIN plane p ON r.planeID = p.planeID;
@@ -435,35 +438,84 @@ app.get('/RequestLecture', (req, res) => {
     if (results.length === 0) {
       return res.status(404).json({ message: 'No requests found' });
     }
+
+    console.log('Fetched requests:', results); // Log ข้อมูลที่ส่งออกมา
     res.status(200).json(results);
   });
 });
-
 app.put('/UpdateRequestStatus', (req, res) => {
-  const { planeID, status } = req.body;
+  const { requestID, rqtStatus } = req.body;
 
-  if (planeID == null || status == null) {
-    return res.status(400).json({ error: 'Please provide planeId and status' });
+  console.log('Request received to update status:', req.body); // เพิ่ม Debug log
+
+  if (!requestID || rqtStatus === undefined) {
+    return res.status(400).json({ error: 'Missing required fields (requestID, rqtStatus)' });
   }
 
-  const query = `
-    UPDATE rqtPlane
-    SET rqtStatus = ?
-    WHERE planeID = ?;
+  // Query เพื่อดึง planeID จาก rqtplane
+  const getPlaneQuery = `
+    SELECT planeID
+    FROM rqtplane
+    WHERE requestID = ?;
   `;
 
-  db.query(query, [status, planeID], (err, result) => {
+  db.query(getPlaneQuery, [requestID], (err, result) => {
     if (err) {
-      console.error('Error executing query:', err);
-      return res.status(500).json({ error: 'Error updating request status in the database' });
+      console.error('Error fetching planeID:', err);
+      return res.status(500).json({ error: 'Error fetching planeID' });
     }
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Plane not found' });
+
+    if (result.length === 0) {
+      return res.status(404).json({ error: 'Request not found' });
     }
-    res.status(200).json({ message: 'Request status updated successfully' });
+
+    const planeID = result[0].planeID;
+
+    // อัปเดต rqtStatus ใน rqtplane
+    const updateRqtQuery = `
+      UPDATE rqtplane
+      SET rqtStatus = ?
+      WHERE requestID = ?;
+    `;
+
+    db.query(updateRqtQuery, [rqtStatus, requestID], (err, updateResult) => {
+      if (err) {
+        console.error('Error updating rqtStatus:', err);
+        return res.status(500).json({ error: 'Error updating request status' });
+      }
+
+      console.log('Request Status Updated:', updateResult);
+
+      // กำหนด planeStatus ตาม rqtStatus
+      let planeStatus;
+      if (rqtStatus === null) {
+        planeStatus = 2; // pending
+      } else if (rqtStatus === 1) {
+        planeStatus = 0; // unavailable
+      } else {
+        planeStatus = 1; // available
+      }
+      console.log('Updating plane status to:', planeStatus);
+
+      // อัปเดต status ใน plane
+      const updatePlaneQuery = `
+        UPDATE plane
+        SET status = ?
+        WHERE planeID = ?;
+      `;
+
+      db.query(updatePlaneQuery, [planeStatus, planeID], (err, planeResult) => {
+        if (err) {
+          console.error('Error updating planeStatus:', err);
+          return res.status(500).json({ error: 'Error updating plane status' });
+        }
+
+        console.log('Plane Status Updated:', planeResult);
+        res.status(200).json({ message: 'Request and plane statuses updated successfully' });
+      });
+    });
   });
 });
-
 
 
 
