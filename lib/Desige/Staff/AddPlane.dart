@@ -1,6 +1,6 @@
-import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 
 class AddPlane extends StatefulWidget {
   const AddPlane({super.key});
@@ -10,67 +10,63 @@ class AddPlane extends StatefulWidget {
 }
 
 class _AddPlaneState extends State<AddPlane> {
-  File? _imageFile;
+  final _formKey = GlobalKey<FormState>();
+  final _imageController = TextEditingController();
+
   String _planeName = '';
   String _seats = '';
   String _tailNumber = '';
   String _planeDescription = '';
+  String _category = 'Commercial'; // ค่าเริ่มต้น
+  bool _status = true; // ค่าเริ่มต้นสำหรับสถานะ
 
-  Future<void> _pickImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
-    }
+  @override
+  void dispose() {
+    _imageController.dispose();
+    super.dispose();
   }
 
-  void _showConfirmationDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirm Plane Details'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: [
-                Text('Plane Name: $_planeName'),
-                Text('Seats: $_seats'),
-                Text('Tail Number: $_tailNumber'),
-                Text('Description: $_planeDescription'),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                _addPlane();
-              },
-            ),
-          ],
+  Future<void> _addPlane() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final Map<String, dynamic> planeData = {
+      'planeName': _planeName,
+      'planeTitle': 'General Aviation',
+      'status': _status ? 1 : 0,
+      'category': _category,
+      'seat': _seats,
+      'planeDescription': _planeDescription,
+      'tailNumber': _tailNumber,
+      'image': _imageController.text,
+    };
+
+    const String apiUrl = 'http://192.168.1.5:3000/addplane';
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(planeData),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text('Plane added successfully: ID ${responseData['id']}')),
         );
-      },
-    );
-  }
-
-  void _addPlane() {
-    print('Plane Added');
-    print(
-        'Name: $_planeName, Seats: $_seats, Tail Number: $_tailNumber, Description: $_planeDescription');
-  }
-
-  void _goBack() {
-    Navigator.pop(context);
+      } else {
+        final error = jsonDecode(response.body)['error'] ?? 'Unknown error';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add plane: $error')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
   }
 
   @override
@@ -78,194 +74,102 @@ class _AddPlaneState extends State<AddPlane> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Plane'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: _goBack,
-        ),
       ),
-      body: Stack(
-        children: [
-          Positioned(
-            top: 40,
-            left: 16,
-            right: 16,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Column(
-                children: [
-                  GestureDetector(
-                    onTap: _pickImage,
-                    child: Container(
-                      height: 200,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: _imageFile != null
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: Image.file(
-                                _imageFile!,
-                                height: 200,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                              ),
-                            )
-                          : const Center(
-                              child: Icon(
-                                Icons.add_photo_alternate,
-                                color: Colors.grey,
-                                size: 50,
-                              ),
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  GestureDetector(
-                    onTap: () {
-                      _showTextInputDialog('Enter Plane Name', (value) {
-                        setState(() {
-                          _planeName = value;
-                        });
-                      });
-                    },
-                    child: Text(
-                      _planeName.isEmpty ? 'Click to add plane name' : _planeName,
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'General Aviation',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildInputField('Enter Seats', _seats, (value) {
-                        setState(() {
-                          _seats = value;
-                        });
-                      }, Icons.event_seat),
-                      _buildInputField('Enter Tail Number', _tailNumber, (value) {
-                        setState(() {
-                          _tailNumber = value;
-                        });
-                      }, Icons.airplanemode_active),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: TextField(
-                      maxLines: 5,
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Add Plane Details',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                // 1. Image File Name
+                TextFormField(
+                  controller: _imageController,
+                  decoration:
+                      const InputDecoration(labelText: 'Image File Name'),
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Please enter image file name'
+                      : null,
+                ),
+                const SizedBox(height: 20),
+                // 2. Plane Name
+                TextFormField(
+                  decoration: const InputDecoration(labelText: 'Plane Name'),
+                  onChanged: (value) => _planeName = value,
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Please enter plane name'
+                      : null,
+                ),
+                const SizedBox(height: 20),
+                // 3. Category
+                TextFormField(
+                  decoration: const InputDecoration(labelText: 'Category'),
+                  onChanged: (value) => _category = value,
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Please enter category'
+                      : null,
+                ),
+                const SizedBox(height: 20),
+                // 4. Seats
+                TextFormField(
+                  decoration: const InputDecoration(labelText: 'Seats'),
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) => _seats = value,
+                  validator: (value) {
+                    final seats = int.tryParse(value ?? '');
+                    if (seats == null || seats <= 0) {
+                      return 'Please enter a valid number of seats';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                // 5. Tail Number
+                TextFormField(
+                  decoration: const InputDecoration(labelText: 'Tail Number'),
+                  onChanged: (value) => _tailNumber = value,
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Please enter tail number'
+                      : null,
+                ),
+                const SizedBox(height: 20),
+                // 6. Description
+                TextFormField(
+                  decoration: const InputDecoration(labelText: 'Description'),
+                  maxLines: 3,
+                  onChanged: (value) => _planeDescription = value,
+                ),
+                const SizedBox(height: 20),
+                // 7. Status
+                Row(
+                  children: [
+                    const Text('Active'),
+                    Switch(
+                      value: _status,
                       onChanged: (value) {
                         setState(() {
-                          _planeDescription = value;
+                          _status = value;
                         });
                       },
-                      decoration: InputDecoration(
-                        hintText: 'Enter plane description',
-                        hintStyle: TextStyle(color: Colors.grey.shade600),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        contentPadding: const EdgeInsets.all(12),
-                      ),
-                      style: const TextStyle(fontSize: 16, color: Colors.black),
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 16,
-            left: 16,
-            right: 16,
-            child: ElevatedButton(
-              onPressed: _showConfirmationDialog,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  ],
                 ),
-              ),
-              child: const Text(
-                'Add Plane',
-                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+                const SizedBox(height: 20),
+                // 8. Save Changes Button
+                ElevatedButton(
+                  onPressed: _addPlane,
+                  child: const Text('Save Changes'),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInputField(
-      String hintText, String value, Function(String) onChanged, IconData icon) {
-    return GestureDetector(
-      onTap: () {
-        _showTextInputDialog(hintText, onChanged);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(20),
         ),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.black),
-            const SizedBox(width: 8),
-            Text(value.isEmpty ? hintText : value, style: const TextStyle(fontSize: 16)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showTextInputDialog(String hintText, Function(String) onChanged) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Enter $hintText'),
-          content: TextField(
-            autofocus: true,
-            onChanged: onChanged,
-            decoration: InputDecoration(hintText: hintText),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class ListPlaneStaff extends StatelessWidget {
-  const ListPlaneStaff({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('List Plane Staff'),
-      ),
-      body: const Center(
-        child: Text('List of planes for staff'),
       ),
     );
   }

@@ -24,7 +24,8 @@ class _ListPlaneState extends State<ListplaneStaff> {
 
   Future<void> _fetchPlanes() async {
     try {
-      final response = await http.get(Uri.parse('http://localhost:3000/plane'));
+      final response =
+          await http.get(Uri.parse('http://192.168.1.5:3000/plane'));
       if (response.statusCode == 200) {
         setState(() {
           planes = jsonDecode(response.body);
@@ -41,13 +42,14 @@ class _ListPlaneState extends State<ListplaneStaff> {
     }
   }
 
-  Future<void> _confirmAndDeletePlane(BuildContext context, String planeId) async {
+  Future<void> _confirmAndDeletePlane(
+      BuildContext context, String planeId) async {
     bool? confirmed = await showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Confirm Deletion'),
-          content: const Text('Are you sure you want to delete this plane?'),
+          title: const Text('Delete Plane'),
+          content: const Text('Do you want to delete?'),
           actions: [
             TextButton(
               child: const Text('Cancel'),
@@ -65,22 +67,29 @@ class _ListPlaneState extends State<ListplaneStaff> {
     if (confirmed == true) {
       try {
         final response = await http.delete(
-          Uri.parse('http://localhost:3000/plane/$planeId'),
+          Uri.parse('http://192.168.1.5:3000/plane/$planeId'),
         );
+
         if (response.statusCode == 200) {
           setState(() {
-            planes.removeWhere((plane) => plane['id'] == planeId);
+            planes
+                .removeWhere((plane) => plane['planeID'] == int.parse(planeId));
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Plane deleted successfully.')),
+            const SnackBar(content: Text('Delete plane Completed')),
+          );
+        } else if (response.statusCode == 404) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Plane not found')),
           );
         } else {
-          throw Exception('Failed to delete plane');
+          final errorMessage = jsonDecode(response.body)['message'] ?? 'Error';
+          throw Exception('Please try again: $errorMessage');
         }
       } catch (e) {
         print('Error deleting plane: $e');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error deleting plane.')),
+          SnackBar(content: Text('Error: $e')),
         );
       }
     }
@@ -162,16 +171,22 @@ class _ListPlaneState extends State<ListplaneStaff> {
                                   context: context,
                                   imagePath: plane['image'] != null
                                       ? 'assets/images/${plane['image']}'
-                                      : 'assets/images/default_plane.jpg',
+                                      : 'assets/images/airplane.jpg',
                                   availability: plane['status'] == 1
                                       ? 'Available'
                                       : plane['status'] == 0
                                           ? 'Unavailable'
                                           : 'Pending',
                                   planeName: plane['planeName'] ?? 'Unknown',
+                                  planeTitle: plane['planeTitle'] ?? 'Unknown',
+                                  planeDescription:
+                                      plane['planeDescription'] ?? '',
+                                  category: plane['category'] ?? '',
                                   seat: plane['seat']?.toString() ?? 'N/A',
                                   tailNumber: plane['tailNumber'] ?? 'N/A',
-                                  planeId: plane['id'].toString(),
+                                  planeId: plane['planeID'].toString(),
+                                  currentImage:
+                                      plane['currentImage'] ?? 'airplane.jpg',
                                 );
                               }).toList(),
                             ),
@@ -189,8 +204,12 @@ class _ListPlaneState extends State<ListplaneStaff> {
   Widget _buildPlaneCard({
     required BuildContext context,
     required String imagePath,
+    required String currentImage,
     required String availability,
     required String planeName,
+    required String planeTitle,
+    required String planeDescription,
+    required String category,
     required String seat,
     required String tailNumber,
     required String planeId,
@@ -217,8 +236,7 @@ class _ListPlaneState extends State<ListplaneStaff> {
               availability,
               style: TextStyle(
                 color: availability == 'Available'
-                    ? const Color.fromARGB(
-                        255, 5, 184, 34)
+                    ? const Color.fromARGB(255, 5, 184, 34)
                     : availability == 'Unavailable'
                         ? Colors.red
                         : Colors.orange,
@@ -250,19 +268,31 @@ class _ListPlaneState extends State<ListplaneStaff> {
                 Row(
                   children: [
                     GestureDetector(
-                      onTap: () {
-                        Navigator.push(
+                      onTap: () async {
+                        final isUpdated = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const EditPlane(),
+                            builder: (context) => EditPlane(
+                              planeId: planeId,
+                              currentImage: currentImage,
+                              planeData: {
+                                'planeName': planeName,
+                                'planeTitle': planeTitle,
+                                'planeDescription': planeDescription,
+                                'category': category,
+                                'seat': seat,
+                                'tailNumber': tailNumber,
+                                'status': availability == 'Available' ? 1 : 0,
+                              },
+                            ),
                           ),
                         );
+
+                        if (isUpdated == true) {
+                          _fetchPlanes(); // Refresh the plane list
+                        }
                       },
-                      child: Image.asset(
-                        'assets/images/editing.png',
-                        height: 30,
-                        width: 30,
-                      ),
+                      child: const Icon(Icons.edit, color: Colors.blue),
                     ),
                     const SizedBox(width: 10),
                     GestureDetector(
