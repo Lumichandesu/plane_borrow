@@ -3,8 +3,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const mysql = require('mysql2');
 const crypto = require('crypto');
-
-
+const jwt = require('jsonwebtoken'); // นำเข้า jwt สำหรับการตรวจสอบ token
 
 const app = express();
 const PORT = 3000;
@@ -12,6 +11,20 @@ const PORT = 3000;
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
+
+// Middleware สำหรับตรวจสอบ JWT token
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // ดึง token จาก header
+
+  if (!token) return res.status(401).json({ message: 'No token provided' });
+
+  jwt.verify(token, 'secret_key', (err, user) => { // ใช้ 'secret_key' ที่คุณตั้งไว้ตอนสร้าง token
+    if (err) return res.status(403).json({ message: 'Invalid token' });
+    req.user = user;
+    next(); // ผ่านการยืนยัน ไปยังเส้นทางที่ร้องขอ
+  });
+}
 
 // Create a MySQL connection
 const db = mysql.createConnection({
@@ -119,14 +132,16 @@ app.post('/login', (req, res) => {
       return res.status(401).json({ accessToken: null, message: 'Invalid password' });
     }
 
-    // If successful, send back a response
-    res.status(200).json({ id: user.id, username: user.username, role_id: user.role_id });
+    // สร้าง JWT token
+    const token = jwt.sign({ id: user.id, role_id: user.role_id }, 'secret_key', { expiresIn: '1h' });
+    res.status(200).json({ id: user.id, username: user.username, role_id: user.role_id, token });
   });
 });
 
+
 // ================ List Plane ===============
 
-// Listplanes
+// Listplanes staff
 app.get('/plane', (req, res) => {
   const query = 'SELECT * FROM plane';
 
@@ -139,293 +154,256 @@ app.get('/plane', (req, res) => {
   });
 });
 
-// add planes
-app.post('/addplane', (req, res) => {
-  const { planeName, planeTitle, status, category, seat, planeDescription, tailNumber, image } = req.body;
+// addplanes
+app.post("/addplane", (req, res) => {
+  const {
+    planeName,
+    planeTitle,
+    status,
+    category,
+    seat,
+    planeDescription,
+    tailNumber,
+    image,
+  } = req.body;
 
-
-  if (!planeName || !planeTitle || status === undefined || !category || !seat || !planeDescription || !tailNumber || !image) {
-    return res.status(400).send({ error: 'Please provide complete in formation' });
+  if (
+    !planeName ||
+    !planeTitle ||
+    status === undefined ||
+    !category ||
+    !seat ||
+    !planeDescription ||
+    !tailNumber ||
+    !image
+  ) {
+    return res.status(400).json({ error: "All fields are required" });
   }
 
-  const query = `INSERT INTO plane (planeName, planeTitle, status, category, seat, planeDescription, tailNumber, image)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-
-  db.query(query, [planeName, planeTitle, status, category, seat, planeDescription, tailNumber, image], (err, result) => {
-    if (err) {
-      console.error('Database insert error:', err);
-      return res.status(500).send({ error: 'Database error' });
-    }
-    res.send({ message: 'Plane added successfully', id: result.insertId });
-  });
-});
-
-//Edit plane
-app.put('/updateplane/:planeID', (req, res) => {
-  const { planeID } = req.params;
-  const { planeName, planeTitle, status, category, seat, planeDescription, tailNumber, image } = req.body;
-
-  // ตรวจสอบว่ามีข้อมูลครบถ้วนหรือไม่
-  if (!planeName || !planeTitle || status === undefined || !category || !seat || !planeDescription || !tailNumber || !image) {
-    return res.status(400).send({ error: 'Please provide complete in formation' });
-  }
-
-  //  คำสั่ง SQL สำหรับการอัปเดตข้อมูล
-  const query = `UPDATE plane SET planeName = ?, planeTitle = ?, status = ?, category = ?, seat = ?, planeDescription = ?, tailNumber = ?, image = ? WHERE planeID = ?`;
-
-  // เรียกใช้ query เพื่ออัปเดตข้อมูลในฐานข้อมูล
-  db.query(query, [planeName, planeTitle, status, category, seat, planeDescription, tailNumber, image, planeID], (err, result) => {
-    if (err) {
-      console.error('Database update error:', err);
-      return res.status(500).send({ error: 'Error in database' });
-    }
-
-    if (result.affectedRows === 0) {
-      return res.status(404).send({ message: 'Not found information' });
-    }
-
-    res.send({ message: 'Edit plane successful' });
-  });
-});
-
-// ================ Request / Return ===================
-
-// Student-Borrow
-
-app.post('/student/rent', async (req, res) => {
-  try {
-    const { planeName, rqtBy, bDate, rDate } = req.body;
-
-
-    if (!planeName || !rqtBy || !bDate || !rDate) {
-      return res.status(400).json({ message: 'Missing required fields' });
-    }
-
-
-    const planeQuery = 'SELECT planeID FROM plane WHERE planeName = ?';
-    db.query(planeQuery, [planeName], (err, results) => {
+  // SQL query to insert data
+  const sql =
+    "INSERT INTO plane (planeName, planeTitle, status, category, seat, planeDescription, tailNumber, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+  db.query(
+    sql,
+    [
+      planeName,
+      planeTitle,
+      status,
+      category,
+      seat + " SEAT", // Add 'SEAT' suffix
+      planeDescription,
+      tailNumber,
+      image,
+    ],
+    (err, result) => {
       if (err) {
-        console.error('Error fetching plane:', err);
-        return res.status(500).json({ message: 'Error fetching plane data' });
+        console.error(err);
+        return res.status(500).json({ error: "Failed to insert data" });
       }
 
-      if (results.length === 0) {
-        return res.status(404).json({ message: 'Plane not found' });
-      }
-
-      const planeID = results[0].planeID;
-
-
-      const rentQuery = `
-        INSERT INTO rqtplane (planeID, rqtBy, bDate, rDate)
-        VALUES (?, ?, ?, ?)
-      `;
-
-      db.query(rentQuery, [planeID, rqtBy, bDate, rDate], (err, result) => {
-        if (err) {
-          console.error('Error inserting rent data:', err);
-          return res.status(500).json({ message: 'Failed to save rent data' });
-        }
-
-    
-        const updatePlaneQuery = `UPDATE plane SET status = 2 WHERE planeID = ?`;
-        db.query(updatePlaneQuery, [planeID], (err, updateResult) => {
-          if (err) {
-            console.error('Error updating plane status:', err);
-            return res.status(500).json({ message: 'Failed to update plane status' });
-          }
-
-          res.status(201).json({ message: 'Rent data saved successfully' });
-        });
-      });
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to save rent data', error: error.message });
-  }
+      res.json({ id: result.insertId, message: "Plane added successfully" });
+    }
+  );
 });
 
+//delete
+app.delete('/plane/:planeID', (req, res) => {
+  const planeID = req.params.planeID;
 
+  if (!planeID) {
+    return res.status(400).json({ message: 'Plane ID is required' });
+  }
 
+  const query = 'DELETE FROM plane WHERE planeID = ?';
 
-// Student-Return
-app.put('/student/return/:planeID', (req, res) => {
-  const { planeID } = req.params;
-
-  // อัปเดตสถานะเครื่องบินให้เป็น "Available"
-  const updateStatusQuery = 'UPDATE plane SET status = 1 WHERE planeID = ?';
-
-  db.query(updateStatusQuery, [planeID], (err, result) => {
+  db.query(query, [planeID], (err, results) => {
     if (err) {
-      console.error('Error updating plane status:', err);
-      return res.status(500).json({ message: 'Failed to update plane status' });
+      console.error('Error deleting plane: ', err);
+      return res.status(500).json({ message: 'Error deleting plane', error: err });
     }
 
-    if (result.affectedRows === 0) {
+    if (results.affectedRows === 0) {
       return res.status(404).json({ message: 'Plane not found' });
     }
 
-    res.status(200).json({ message: 'Plane status updated to available successfully' });
+    res.status(200).json({ message: 'Plane deleted successfully' });
   });
 });
 
+// ดึงข้อมูลตาม planeID
+app.get('/plane/:planeID', (req, res) => {
+  const { planeID } = req.params;
 
+  const query = `SELECT * FROM plane WHERE planeID = ?`;
 
-
-
-
-
-
-
-
-// Staff-Return แสดงข้อมูล
-app.get('/Returnplane', (req, res) => {
-  const query = `
-    SELECT 
-    h1.planeId, h1.rqtBy, h1.bDate, h1.rDate, h1.approved, h1.Lender, 
-    h1.ApprovedStatus, h1.ReturnStaus, u1.username AS rqtByName, 
-    p.planeName, p.image, u2.username AS LenderName, 
-    u3.username AS StaffName
-  FROM history h1
-  INNER JOIN users u1 ON h1.rqtBy = u1.id               
-  INNER JOIN users u2 ON h1.Lender = u2.id
-  INNER JOIN users u3 ON h1.approved = u3.id
-  JOIN Plane p ON h1.planeId = p.planeId
-  WHERE h1.ReturnStaus != 1  
-    AND (h1.ApprovedStatus IS NOT NULL AND h1.ApprovedStatus != 0)
-  `;
-
-  db.query(query, (err, results) => {
+  db.query(query, [planeID], (err, result) => {
     if (err) {
-      console.error('Error executing query:', err);
-      return res.status(500).json({ error: 'Error retrieving data from database' });
+      console.error('Database fetch error:', err);
+      return res.status(500).send({ error: 'Database error' });
     }
-    if (results.length === 0) {
-      return res.status(404).json({ message: 'No requests found' });
+
+    if (result.length === 0) {
+      return res.status(404).send({ message: 'Plane not found' });
     }
-    res.status(200).json(results);
+
+    res.send(result[0]);
   });
 });
-//อัพเดตข้อมูล
-app.put('/UpdateReturnStatus/:rqtBy', (req, res) => {
-  const { status, planeID } = req.body; // รับ planeID จาก body
-  const { rqtBy } = req.params;
 
-  // ตรวจสอบว่า input ครบหรือไม่
-  if (status == null || rqtBy == null || planeID == null) {
-    return res.status(400).json({ error: 'Please provide rqtBy, status, and planeID' });
+
+// Edit Plane
+app.put('/updateplane/:planeID', (req, res) => {
+  const { planeID } = req.params;
+  const {
+    planeName,
+    planeTitle,
+    status,
+    category,
+    seat,
+    planeDescription,
+    tailNumber,
+    image,
+  } = req.body;
+
+  // เช็คข้อมูลที่จำเป็นเท่านั้น
+  if (!planeName || status === undefined || !seat || !tailNumber) {
+    return res.status(400).send({ error: 'Please provide complete information' });
   }
 
-  // คำสั่ง SQL
-  const updateHistoryQuery = `
-    UPDATE history
-    SET ReturnStaus = ?
-    WHERE rqtBy = ?;
-  `;
-
-  const updatePlaneQuery = `
+  const query = `
     UPDATE plane
-    SET status = 1
-    WHERE planeID = ?;
+    SET planeName = ?, planeTitle = ?, status = ?, category = ?, seat = ?, planeDescription = ?, tailNumber = ?, image = ?
+    WHERE planeID = ?
   `;
 
-  // อัปเดต history ก่อน
-  db.query(updateHistoryQuery, [status, rqtBy], (err, result) => {
-    if (err) {
-      console.error('Error updating ReturnStaus:', err);
-      return res.status(500).json({ error: 'Error updating return status in the database' });
-    }
-
-    // ตรวจสอบว่า history ถูกอัปเดตสำเร็จ
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'No history record found for the given rqtBy' });
-    }
-
-    // อัปเดต plane status
-    db.query(updatePlaneQuery, [planeID], (err, result) => {
+  db.query(
+    query,
+    [
+      planeName || null, 
+      planeTitle || null, 
+      status, 
+      category || 'General', // ค่าเริ่มต้นเป็น General
+      seat, 
+      planeDescription || 'No description', // คำอธิบายเริ่มต้น
+      tailNumber, 
+      image || 'airplane.jpg', // หากไม่มีรูป ใช้ airplane
+      planeID,
+    ],
+    (err, result) => {
       if (err) {
-        console.error('Error updating plane status:', err);
-        return res.status(500).json({ error: 'Error updating plane status in the database' });
+        console.error('Database update error:', err);
+        return res.status(500).send({ error: 'Error in database' });
       }
 
-      // ตรวจสอบว่า plane ถูกอัปเดตสำเร็จ
       if (result.affectedRows === 0) {
-        return res.status(404).json({ message: 'No plane record found for the given planeID' });
+        return res.status(404).send({ message: 'Plane not found' });
       }
 
-      // สำเร็จ
-      res.status(200).json({ message: 'Return status and plane status updated successfully' });
-    });
-  });
+      res.send({ message: 'Edit plane successful' });
+    }
+  );
+});
+
+
+// ================ Request / Return ===================
+
+// Student-Request
+
+// Staff-Return
+//ตัวนี้ต้องมีข้อมูลในดาต้าเบส เอาตัวเลขใน requestID ในdatabaseแทนที่ :request_id ของurl ถึงจะใช้งานได้
+app.put('/Returnplane/:request_id', function(req, res) {
+  const requestID = req.params.request_id; // ใช้ request_id จาก URL ที่ถูกต้อง
+  const { rqtStatus } = req.body; // รับข้อมูลที่ต้องการอัปเดต
+
+  // ตรวจสอบข้อมูลที่ส่งมา
+  if (requestID && rqtStatus) {
+      // SQL query เพื่ออัปเดตสถานะใน rqtplane
+      const sql = "UPDATE `rqtplane` SET rqtStatus = ? WHERE requestID = ?";
+
+      db.query(sql, [rqtStatus, requestID], (err, results) => {
+          if (err) {
+              console.error("Error updating request:", err);
+              return res.status(500).json({ error: "Database server error" });
+          }
+
+          if (results.affectedRows === 0) {
+              return res.status(404).json({ message: "data not found" });
+          }
+
+          return res.status(200).json({ message: "updated successfully",requestBody: req.body  });
+      });
+  } else {
+      res.status(400).json({ error: 'fail' });
+  }
 });
 
 // ============== Dashboard ====================
 
 //Staff-Dashboard
 // 0 = unavailble, 1 = Available, 2 = pending
-app.put("/DashboardStaff", function (req, res) {
+app.put("/DashboardStaff", function(req, res) {
   let sql = 'SELECT status FROM `plane`';
 
   db.query(sql, (err, results) => {
-    if (err) {
-      console.error('Database query error:', err);
-      return res.status(500).json({ error: "Database server error" });
-    }
+      if (err) {
+          console.error('Database query error:', err);
+          return res.status(500).json({ error: "Database server error" });
+      }
+      
+      console.log('Query results:', results);
 
-    console.log('Query results:', results);
-
-
-    return res.status(200).json({
-      results,
-      requestBody: req.body
-    });
+      
+      return res.status(200).json({
+          results,
+          requestBody: req.body 
+      });
   });
 });
 
 // Lecture-Dardboard
-app.put("/DashboardLecture", function (req, res) {
+app.put("/DashboardLecture", function(req, res) {
   let sql = 'SELECT status FROM `plane`';
 
   db.query(sql, (err, results) => {
-    if (err) {
-      console.error('Database query error:', err);
-      return res.status(500).json({ error: "Database server error" });
-    }
+      if (err) {
+          console.error('Database query error:', err);
+          return res.status(500).json({ error: "Database server error" });
+      }
+      
+      console.log('Query results:', results);
 
-    console.log('Query results:', results);
-
-
-    return res.status(200).json({
-      results,
-      requestBody: req.body
-    });
+      
+      return res.status(200).json({
+          results,
+          requestBody: req.body 
+      });
   });
 });
 
 // ================ Check Request Plane ====================
 
 // Request Plane Student
-app.get('/RequestStudent/:userId',  (req, res) => {
-  const userId  = req.params.userId; // ดึงค่า rqtBy จาก URL parameter
+app.get('/RequestStudent/:rqtBy', authenticateToken, (req, res) => {
+  const { rqtBy } = req.params; // ดึงค่า rqtBy จาก URL parameter
 
-  if (!userId) {
+  if (!rqtBy) {
     return res.status(400).json({ error: 'Please provide rqtBy' });
   }
 
   const query = `
-    SELECT
-      p.image AS planeImage,
-      p.planeName AS planeName,
-      u.username AS requestName,
-      r.bDate,
-      r.rDate,
-      r.rqtStatus
+    SELECT 
+        p.image AS planeImage,
+        p.planeName AS planeName,
+        u.username AS requestName,
+        r.bDate,
+        r.rDate,
+        r.rqtStatus
     FROM rqtPlane r
     INNER JOIN users u ON r.rqtBy = u.id
     INNER JOIN plane p ON r.planeID = p.planeID
-    WHERE r.rqtBy = ?;
-  `;
+    WHERE r.rqtBy = ?`;
 
-  db.query(query, [userId], (err, results) => {
+  db.query(query, [rqtBy], (err, results) => {
     if (err) {
       console.error('Error executing query:', err);
       return res.status(500).json({ error: 'Error retrieving data from database' });
@@ -436,143 +414,46 @@ app.get('/RequestStudent/:userId',  (req, res) => {
     res.status(200).json(results);
   });
 });
-//==================Request Lecture============
-// Request Plane Lecture
+
+// Request Plane Student Lecture
 app.get('/RequestLecture', (req, res) => {
-  const query = `
-    SELECT
-      r.requestID,
-      p.planeID, -- ตรวจสอบว่าฟิลด์นี้มีอยู่ในฐานข้อมูลและดึงออกมา
-      p.image AS planeImage,
-      p.planeName AS planeName,
-      u.username AS requestName,
-      r.bDate,
-      r.rDate,
-      r.rqtStatus
-      
-    FROM rqtPlane r
-    INNER JOIN users u ON r.rqtBy = u.id
-    INNER JOIN plane p ON r.planeID = p.planeID;
-  `;
+  const query = 'SELECT * FROM rqtplane';
 
   db.query(query, (err, results) => {
     if (err) {
       console.error('Error executing query:', err);
-      return res.status(500).json({ error: 'Error retrieving data from database' });
+      return res.status(500).send('Error retrieving data from database');
     }
-    if (results.length === 0) {
-      return res.status(404).json({ message: 'No requests found' });
-    }
-
-    console.log('Fetched requests:', results); // Log ข้อมูลที่ส่งออกมา
-    res.status(200).json(results);
+    res.status(200).json(results); // ส่งข้อมูลกลับในรูปแบบ JSON
   });
 });
-app.put('/UpdateRequestStatus', (req, res) => {
-  const { requestID, rqtStatus } = req.body;
-
-  console.log('Request received to update status:', req.body); // เพิ่ม Debug log
-
-  if (!requestID || rqtStatus === undefined) {
-    return res.status(400).json({ error: 'Missing required fields (requestID, rqtStatus)' });
-  }
-
-  // Query เพื่อดึง planeID จาก rqtplane
-  const getPlaneQuery = `
-    SELECT planeID
-    FROM rqtplane
-    WHERE requestID = ?;
-  `;
-
-  db.query(getPlaneQuery, [requestID], (err, result) => {
-    if (err) {
-      console.error('Error fetching planeID:', err);
-      return res.status(500).json({ error: 'Error fetching planeID' });
-    }
-
-    if (result.length === 0) {
-      return res.status(404).json({ error: 'Request not found' });
-    }
-
-    const planeID = result[0].planeID;
-
-    // อัปเดต rqtStatus ใน rqtplane
-    const updateRqtQuery = `
-      UPDATE rqtplane
-      SET rqtStatus = ?
-      WHERE requestID = ?;
-    `;
-
-    db.query(updateRqtQuery, [rqtStatus, requestID], (err, updateResult) => {
-      if (err) {
-        console.error('Error updating rqtStatus:', err);
-        return res.status(500).json({ error: 'Error updating request status' });
-      }
-
-      console.log('Request Status Updated:', updateResult);
-
-      // กำหนด planeStatus ตาม rqtStatus
-      let planeStatus;
-      if (rqtStatus === null) {
-        planeStatus = 2; // pending
-      } else if (rqtStatus === 1) {
-        planeStatus = 0; // unavailable
-      } else {
-        planeStatus = 1; // available
-      }
-      console.log('Updating plane status to:', planeStatus);
-
-      // อัปเดต status ใน plane
-      const updatePlaneQuery = `
-        UPDATE plane
-        SET status = ?
-        WHERE planeID = ?;
-      `;
-
-      db.query(updatePlaneQuery, [planeStatus, planeID], (err, planeResult) => {
-        if (err) {
-          console.error('Error updating planeStatus:', err);
-          return res.status(500).json({ error: 'Error updating plane status' });
-        }
-
-        console.log('Plane Status Updated:', planeResult);
-        res.status(200).json({ message: 'Request and plane statuses updated successfully' });
-      });
-    });
-  });
-});
-
-
-
-
-
 
 // ================= History Plane =============
 
-// Student-History: ดึงข้อมูลตาม id ของผู้ใช้ที่ล็อกอิน (ใช้เป็น rqtBy ในตาราง history)
-app.post('/HistoryStudent/:userId', (req, res) => {
-  const userId = req.params.userId; // ดึงค่า userId จาก URL
-  console.log('User ID (Logged In):', userId);
+// Student-History
+app.post('/HistoryStudent/:rqtBy', (req, res) => {
+  const rqtBy = req.params.rqtBy; // ดึงค่า rqtBy จาก URL
+  console.log('rqtBy:', rqtBy); 
 
-  if (!userId) {
-    return res.status(400).json({ message: 'Missing userId parameter' });
+  if (!rqtBy) {
+    return res.status(400).json({ message: 'Missing rqtBy parameter' });
   }
-
-  // SQL Query ที่ใช้ในการดึงข้อมูลที่ rqtBy ตรงกับ userId ที่ส่งมา
   const query = `
   SELECT 
     h1.planeId, h1.rqtBy, h1.bDate, h1.rDate, h1.approved, h1.Lender, 
     h1.ApprovedStatus, h1.ReturnStaus, u1.username AS rqtByName, 
-    p.planeName, p.image, u2.username AS LenderName, 
+    p.planeName,p.image, u2.username AS LenderName, 
     u3.username AS StaffName
   FROM history h1
-  INNER JOIN users u1 ON h1.rqtBy = u1.id
-  LEFT JOIN users u2 ON h1.Lender = u2.id
-  LEFT JOIN users u3 ON h1.approved = u3.id
-  LEFT JOIN Plane p ON h1.planeId = p.planeId 
+  INNER JOIN users u1 ON h1.rqtBy = u1.id               
+  INNER JOIN users u2 ON h1.Lender = u2.id
+  INNER JOIN users u3 ON h1.approved = u3.id
+  JOIN Plane p ON h1.planeId = p.planeId 
   WHERE h1.rqtBy = ?`;
 
-  db.query(query, [userId], (err, results) => {
+ 
+  // const query = 'SELECT * FROM history WHERE rqtBy = ?';
+  db.query(query, [rqtBy], (err, results) => {
     if (err) {
       console.error('Error executing query:', err);
       return res.status(500).json({ message: 'Error retrieving data from database' });
@@ -586,42 +467,40 @@ app.post('/HistoryStudent/:userId', (req, res) => {
 });
 
 
+// Lecture-History
+app.post('/HistoryLecture/:approved', (req, res) => {
+  const approved = req.params.approved; // ดึงค่า approved จาก URL
+
+  if (!approved) {
+    return res.status(400).json({ message: 'Missing approved parameter' });
+  }
+
+  const query = 'SELECT * FROM history WHERE approved = ?';
+  db.query(query, [approved], (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err);
+      return res.status(500).json({ message: 'Error retrieving data from database' });
+    }
+    res.status(200).json(results);
+  });
+});
 
 
 // Staff-History
-app.post("/HistoryStaff", function (req, res) {
-  let sql = `
-  SELECT 
-    h1.planeId, h1.rqtBy, h1.bDate, h1.rDate, h1.approved, h1.Lender, 
-    h1.ApprovedStatus, h1.ReturnStaus, u1.username AS rqtByName, 
-    p.planeName, p.image, u2.username AS LenderName, 
-    u3.username AS StaffName
-  FROM history h1
-  INNER JOIN users u1 ON h1.rqtBy = u1.id               
-  INNER JOIN users u2 ON h1.Lender = u2.id
-  INNER JOIN users u3 ON h1.approved = u3.id
-  JOIN Plane p ON h1.planeId = p.planeId`;
+app.post("/HistoryStaff", function(req, res) {
+  let sql = 'SELECT * FROM `history`';
 
   db.query(sql, (err, results) => {
-    if (err) {
-      console.error('Database query error:', err);
-      return res.status(500).json({ error: "Database server error" });
-    }
-
-    console.log('Query Results:', results);  // ตรวจสอบผลลัพธ์จากฐานข้อมูล
-
-    if (results.length === 0) {
-      return res.status(404).json({
-        message: "No history available",
-        data: []
+      if (err) {
+          console.error('Database query error:', err);
+          return res.status(500).json({ error: "Database server error" });
+      }
+      console.log('Query results:', results);
+      return res.status(200).json({
+          message: "Data retrieved successfully",
+          data: results,
+          requestBody: req.body 
       });
-    }
-
-    return res.status(200).json({
-      message: "Data retrieved successfully",
-      data: results,
-      requestBody: req.body
-    });
   });
 });
 

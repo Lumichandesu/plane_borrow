@@ -12,10 +12,11 @@ dependencies:
     sdk: flutter
   intl: ^0.17.0
   cupertino_icons: ^1.0.6
-  image_picker: ^0.8.5+3
-  http: ^0.13.4
+  image_picker: ^0.8.5+4
+  http: ^0.13.6
   shared_preferences: ^2.0.15  # Added dependency for shared_preferences
-
+  
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
