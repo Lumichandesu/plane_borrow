@@ -47,7 +47,7 @@ class _RequestLectureState extends State<RequestLecture>
             requests = [];
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('No requests available.')),
+            const SnackBar(content: const Text('No requests available.')),
           );
         }
       } else {
@@ -151,7 +151,7 @@ class _RequestLectureState extends State<RequestLecture>
           SnackBar(
             content: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.check_circle,
                   color: Colors.green,
                 ),
@@ -174,7 +174,7 @@ class _RequestLectureState extends State<RequestLecture>
     } catch (e) {
       print('Error updating request status: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating request status')),
+        const SnackBar(content: const Text('Error updating request status')),
       );
     } finally {
       setState(() {
@@ -194,9 +194,9 @@ class _RequestLectureState extends State<RequestLecture>
           children: [
             Positioned.fill(
               child: Container(
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('assets/images/airplane.jpg'),
+                decoration: const BoxDecoration(
+                  image: const DecorationImage(
+                    image: const AssetImage('assets/images/airplane.jpg'),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -241,8 +241,8 @@ class _RequestLectureState extends State<RequestLecture>
                         const SizedBox(height: 20),
                         ListView.builder(
                           shrinkWrap: true,
-                          physics: NeverScrollableScrollPhysics(),
-                          padding: EdgeInsets.only(top: 16),
+                          physics: const NeverScrollableScrollPhysics(),
+                          padding: const EdgeInsets.only(top: 16),
                           itemCount: requests.isEmpty ? 1 : requests.length,
                           itemBuilder: (context, index) {
                             if (requests.isEmpty) {
@@ -389,7 +389,7 @@ class _RequestLectureState extends State<RequestLecture>
                       style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green),
                       child: isProcessing
-                          ? CircularProgressIndicator(color: Colors.white)
+                          ? const CircularProgressIndicator(color: Colors.white)
                           : const Text(
                               'Approve',
                               style: TextStyle(
@@ -421,7 +421,7 @@ class _RequestLectureState extends State<RequestLecture>
                       style:
                           ElevatedButton.styleFrom(backgroundColor: Colors.red),
                       child: isProcessing
-                          ? CircularProgressIndicator(color: Colors.white)
+                          ? const CircularProgressIndicator(color: Colors.white)
                           : const Text(
                               'Reject',
                               style: TextStyle(

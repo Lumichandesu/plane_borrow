@@ -10,13 +10,13 @@ class EditPlane extends StatefulWidget {
 }
 
 class _EditPlaneState extends State<EditPlane> {
-  TextEditingController _planeNameController =
+  final TextEditingController _planeNameController =
       TextEditingController(text: "Diamond DA40");
-  TextEditingController _seatsController =
+  final TextEditingController _seatsController =
       TextEditingController(text: "4 Seats");
-  TextEditingController _tailNumberController =
+  final TextEditingController _tailNumberController =
       TextEditingController(text: "N12345");
-  TextEditingController _descriptionController = TextEditingController(
+  final TextEditingController _descriptionController = TextEditingController(
       text:
           "The cockpit is glass-panel equipped with avionics like the Garmin G1000 system (in most configurations), providing navigation, autopilot, and flight management systems. This makes the aircraft easy to fly and enhances situational awareness for the pilot.");
 

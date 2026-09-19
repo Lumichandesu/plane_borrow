@@ -333,7 +333,7 @@ class _PlaneDetailPageState extends State<PlaneDetailPage> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.event_seat, color: Colors.grey),
+                            const Icon(Icons.event_seat, color: Colors.grey),
                             const SizedBox(width: 8),
                             Text(
                               widget.seat,
@@ -354,7 +354,8 @@ class _PlaneDetailPageState extends State<PlaneDetailPage> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.airplanemode_active, color: Colors.grey),
+                            const Icon(Icons.airplanemode_active,
+                                color: Colors.grey),
                             const SizedBox(width: 8),
                             Text(
                               widget.tailNumber,

@@ -30,7 +30,8 @@ class _AppbarstudentState extends State<HomeStudent> {
         bottomNavigationBar: Container(
           color: Colors.black,
           child: const TabBar(
-            labelColor: Color.fromARGB(255, 251, 96, 85), // สีของข้อความที่ถูกเลือก
+            labelColor:
+                Color.fromARGB(255, 251, 96, 85), // สีของข้อความที่ถูกเลือก
             unselectedLabelColor: Colors.white, // สีของข้อความที่ไม่ได้ถูกเลือก
             labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             tabs: [
@@ -51,9 +52,10 @@ class _AppbarstudentState extends State<HomeStudent> {
         ),
         body: TabBarView(
           children: [
-            ListplaneStudent(),
+            const ListplaneStudent(),
             RequestStudent(userId: widget.userId),
-            HistoryStudent3(userId: widget.userId), // ส่ง userId ไปยังหน้า HistoryStudent3
+            HistoryStudent3(
+                userId: widget.userId), // ส่ง userId ไปยังหน้า HistoryStudent3
           ],
         ),
       ),

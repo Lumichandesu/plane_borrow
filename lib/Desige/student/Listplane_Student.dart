@@ -92,15 +92,15 @@ class _ListplaneStudentState extends State<ListplaneStudent> {
                                     titlePadding: const EdgeInsets.all(0),
                                     title: const Column(
                                       children: [
-                                        const SizedBox(height: 20),
-                                        const Align(
+                                        SizedBox(height: 20),
+                                        Align(
                                           alignment: Alignment.topCenter,
                                           child: Icon(Icons.error_outline,
                                               color: Colors.orange,
                                               size: 50), // ไอคอนสีส้มตรงกลาง
                                         ),
-                                        const SizedBox(height: 10),
-                                        const Text(
+                                        SizedBox(height: 10),
+                                        Text(
                                           "Are you sure?",
                                           style: TextStyle(
                                               fontWeight: FontWeight.bold),
@@ -131,7 +131,7 @@ class _ListplaneStudentState extends State<ListplaneStudent> {
                                               .showSnackBar(
                                             const SnackBar(
                                               content: Row(
-                                                children: const [
+                                                children: [
                                                   Icon(Icons.check_circle,
                                                       color: Colors
                                                           .green), // ไอคอนสีเขียว
@@ -143,9 +143,8 @@ class _ListplaneStudentState extends State<ListplaneStudent> {
                                                   ),
                                                 ],
                                               ),
-                                              backgroundColor:
-                                                  const Color.fromARGB(
-                                                      255, 245, 244, 244),
+                                              backgroundColor: Color.fromARGB(
+                                                  255, 245, 244, 244),
                                               behavior:
                                                   SnackBarBehavior.floating,
                                             ),
@@ -253,8 +252,8 @@ class _ListplaneStudentState extends State<ListplaneStudent> {
     return InkWell(
       onTap: isAvailable || isPending
           ? () async {
-          final result = await Navigator.push(
-            context,
+              final result = await Navigator.push(
+                context,
                 MaterialPageRoute(
                   builder: (context) => PlaneDetailStudentPage(
                     imagePath: imagePath,
@@ -266,12 +265,12 @@ class _ListplaneStudentState extends State<ListplaneStudent> {
                   ),
                 ),
               );
-             
-          if (result == true) {
-            _fetchPlanes();
-          }
-        }
-      : null,
+
+              if (result == true) {
+                _fetchPlanes();
+              }
+            }
+          : null,
       child: cardContent,
     );
   }
@@ -329,66 +328,64 @@ class _PlaneDetailStudentPageState extends State<PlaneDetailStudentPage> {
       });
     }
   }
-  
 
- Future<void> _submitRentData() async {
-  if (borrowDate == null || returnDate == null) return;
+  Future<void> _submitRentData() async {
+    if (borrowDate == null || returnDate == null) return;
 
-  // ดึง user ID จาก SharedPreferences
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
-  final String? userId = prefs.getString('user_id'); // เก็บ user ID ใน SharedPreferences
+    // ดึง user ID จาก SharedPreferences
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? userId =
+        prefs.getString('user_id'); // เก็บ user ID ใน SharedPreferences
 
-  if (userId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("User not logged in"),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
-  }
-
-  try {
-    final response = await http.post(
-      Uri.parse('http://192.168.1.3:3000/student/rent'), // API Endpoint
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'planeName': widget.planeName,
-        'rqtBy': userId,
-        'bDate': formatDate(borrowDate!),
-        'rDate': formatDate(returnDate!),
-      }),
-    );
-
-    if (response.statusCode == 201) {
+    if (userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Rent successful"),
-          backgroundColor: Colors.green,
+          content: Text("User not logged in"),
+          backgroundColor: Colors.red,
         ),
       );
+      return;
+    }
 
-     
-      Navigator.of(context).pop(true); // ส่งค่า true กลับไปเพื่อบอกให้ ListplaneStudent รีเฟรช
-    } else {
+    try {
+      final response = await http.post(
+        Uri.parse('http://192.168.1.3:3000/student/rent'), // API Endpoint
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'planeName': widget.planeName,
+          'rqtBy': userId,
+          'bDate': formatDate(borrowDate!),
+          'rDate': formatDate(returnDate!),
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Rent successful"),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.of(context)
+            .pop(true); // ส่งค่า true กลับไปเพื่อบอกให้ ListplaneStudent รีเฟรช
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to rent: ${response.body}"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Failed to rent: ${response.body}"),
+        const SnackBar(
+          content: Text("Error submitting rent data"),
           backgroundColor: Colors.red,
         ),
       );
     }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Error submitting rent data"),
-        backgroundColor: Colors.red,
-      ),
-    );
   }
-}
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -462,7 +459,7 @@ class _PlaneDetailStudentPageState extends State<PlaneDetailStudentPage> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.event_seat, color: Colors.grey),
+                            const Icon(Icons.event_seat, color: Colors.grey),
                             const SizedBox(width: 8),
                             Text(
                               widget.seat,
@@ -482,7 +479,8 @@ class _PlaneDetailStudentPageState extends State<PlaneDetailStudentPage> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.airplanemode_active, color: Colors.grey),
+                            const Icon(Icons.airplanemode_active,
+                                color: Colors.grey),
                             const SizedBox(width: 8),
                             Text(
                               widget.tailNumber,
@@ -578,6 +576,3 @@ class _PlaneDetailStudentPageState extends State<PlaneDetailStudentPage> {
     );
   }
 }
-
-
-

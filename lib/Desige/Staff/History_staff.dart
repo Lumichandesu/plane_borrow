@@ -193,9 +193,10 @@ class _HistoryStaffState extends State<HistoryStaff> {
                 ],
               ),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'Borrower:',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               Text(requesterName),
               const SizedBox(height: 8),
@@ -224,7 +225,7 @@ class _HistoryStaffState extends State<HistoryStaff> {
                   ),
 
                   // ข้อความที่สอง
-                  SizedBox(width: 10), // ระยะห่างระหว่างข้อความทั้งสอง
+                  const SizedBox(width: 10), // ระยะห่างระหว่างข้อความทั้งสอง
                   Center(
                     child: Text(
                       actionButtonText2,
@@ -347,15 +348,14 @@ class HistoryItem {
   }
 
   Color get actionColor {
-  if (actionButtonColor == 'green') {
-    return Colors.green;
-  } else if (actionButtonColor == 'orange') {
-    return Colors.orange;
-  } else {
-    return Colors.red;
+    if (actionButtonColor == 'green') {
+      return Colors.green;
+    } else if (actionButtonColor == 'orange') {
+      return Colors.orange;
+    } else {
+      return Colors.red;
+    }
   }
-}
-
 
   Color get actionColor2 {
     return actionButtonColor2 == 'green' ? Colors.green : Colors.red;

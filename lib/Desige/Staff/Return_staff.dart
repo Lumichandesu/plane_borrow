@@ -10,7 +10,6 @@ class ReturnStaff extends StatefulWidget {
   State<ReturnStaff> createState() => _ReturnStaffState();
 }
 
-
 class _ReturnStaffState extends State<ReturnStaff> {
   List<Map<String, dynamic>> returnStatusData = [];
   @override
@@ -61,7 +60,7 @@ class _ReturnStaffState extends State<ReturnStaff> {
                 return Center(
                     child: Text(
                   'Error: ${snapshot.error}',
-                  style: TextStyle(color: Colors.red),
+                  style: const TextStyle(color: Colors.red),
                 ));
               } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                 return const Center(child: Text('No data available'));
@@ -105,19 +104,18 @@ class _ReturnStaffState extends State<ReturnStaff> {
                             itemBuilder: (context, index) {
                               ReturnItem item = snapshot.data![index];
                               return _buildReturnCard(
-                                context: context,
-                                airplaneImage: item.airplaneImage,
-                                modelName: item.modelName,
-                                staffName: item.staffId,
-                                configuredBy: item.configuredBy,
-                                borrowingDate: item.formattedBorrowingDate,
-                                returnDate: item.formattedReturnDate,
-                                requestBy: item.requestBy,
-                                requesterName: item.requesterName,
-                                rqtBy: item.rqtBy,
-                                ReturnStatus: item.ReturnStatus,
-                                planeID : item.planeId
-                              );
+                                  context: context,
+                                  airplaneImage: item.airplaneImage,
+                                  modelName: item.modelName,
+                                  staffName: item.staffId,
+                                  configuredBy: item.configuredBy,
+                                  borrowingDate: item.formattedBorrowingDate,
+                                  returnDate: item.formattedReturnDate,
+                                  requestBy: item.requestBy,
+                                  requesterName: item.requesterName,
+                                  rqtBy: item.rqtBy,
+                                  ReturnStatus: item.ReturnStatus,
+                                  planeID: item.planeId);
                             },
                           ),
                         ],
@@ -206,9 +204,9 @@ Widget _buildReturnCard({
               ],
             ),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'Borrower:',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             Text(requesterName),
             const SizedBox(height: 8),
@@ -224,24 +222,26 @@ Widget _buildReturnCard({
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 ElevatedButton(
-                onPressed: ReturnStatus == "1" || ReturnStatus == 1
-                    ? null
-                    : () {
-                        showConfirmationDialog(
-                          context: context,
-                          title: 'Confirm Return',
-                          content: 'Are you sure you want to return this plane?',
-                          onConfirm: () {
-                            updateReturnStatus(context, rqtBy, planeID); // ใช้ rqtBy
-                          },
-                        );
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
+                  onPressed: ReturnStatus == "1" || ReturnStatus == 1
+                      ? null
+                      : () {
+                          showConfirmationDialog(
+                            context: context,
+                            title: 'Confirm Return',
+                            content:
+                                'Are you sure you want to return this plane?',
+                            onConfirm: () {
+                              updateReturnStatus(
+                                  context, rqtBy, planeID); // ใช้ rqtBy
+                            },
+                          );
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Return'),
                 ),
-                child: const Text('Return'),
-              ),
               ],
             ),
           ],
@@ -251,13 +251,14 @@ Widget _buildReturnCard({
   );
 }
 
-Future<void> updateReturnStatus(BuildContext context, int rqtBy, int planeID) async {
+Future<void> updateReturnStatus(
+    BuildContext context, int rqtBy, int planeID) async {
   try {
     final response = await http.put(
       Uri.parse('http://localhost:3000/UpdateReturnStatus/$rqtBy'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        'status': 1,      // อัปเดต ReturnStaus เป็น 1
+        'status': 1, // อัปเดต ReturnStaus เป็น 1
         'planeID': planeID // ระบุ planeID ที่ต้องการอัปเดต
       }),
     );
@@ -277,8 +278,6 @@ Future<void> updateReturnStatus(BuildContext context, int rqtBy, int planeID) as
     );
   }
 }
-
-
 
 Future<void> showConfirmationDialog({
   required BuildContext context,
@@ -363,7 +362,7 @@ class ReturnItem {
           : DateTime.now(),
       id: json['id'] ?? 0, // ตรวจสอบค่าที่เป็น null
       planeName: json['planeName'] ?? 'Unknown',
-      ReturnStatus: json['ReturnStaus']?.toString() ??'N/A',
+      ReturnStatus: json['ReturnStaus']?.toString() ?? 'N/A',
     );
   }
   String get formattedBorrowingDate {

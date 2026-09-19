@@ -13,113 +13,109 @@ class HistoryStudent3 extends StatefulWidget {
 }
 
 class _HistoryStudent3State extends State<HistoryStudent3> {
-  
- Future<List<HistoryItem>> fetchHistoryItems(String userId) async {
-  final response =
-      await http.post(Uri.parse('http://192.168.1.3:3000/HistoryStudent/${widget.userId}'));
+  Future<List<HistoryItem>> fetchHistoryItems(String userId) async {
+    final response = await http.post(
+        Uri.parse('http://192.168.1.3:3000/HistoryStudent/${widget.userId}'));
     print('User ID for API request: ${widget.userId}');
 
-  if (response.statusCode == 200) {
-    List jsonResponse = json.decode(response.body);
-    return jsonResponse.map((item) => HistoryItem.fromJson(item)).toList();
-  } else {
-    print('Failed to load history: ${response.statusCode}');
-    throw Exception('Failed to load history');
+    if (response.statusCode == 200) {
+      List jsonResponse = json.decode(response.body);
+      return jsonResponse.map((item) => HistoryItem.fromJson(item)).toList();
+    } else {
+      print('Failed to load history: ${response.statusCode}');
+      throw Exception('Failed to load history');
+    }
   }
-  
-}
 
+  @override
+  Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double screenHeight = MediaQuery.of(context).size.height;
 
-
-@override
-Widget build(BuildContext context) {
-  final double screenWidth = MediaQuery.of(context).size.width;
-  final double screenHeight = MediaQuery.of(context).size.height;
-
-  return Scaffold(
-    body: Stack(
-      children: [
-        Positioned.fill(
-          child: Image.asset(
-            'assets/images/airplane.jpg',
-            fit: BoxFit.cover,
+    return Scaffold(
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/airplane.jpg',
+              fit: BoxFit.cover,
+            ),
           ),
-        ),
-        FutureBuilder<List<HistoryItem>>(
-          future: fetchHistoryItems(widget.userId),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text('No history available'));
-            } else {
-              return ListView(
-                padding: EdgeInsets.only(top: screenHeight * 0.1),
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(50),
-                        topRight: Radius.circular(50),
+          FutureBuilder<List<HistoryItem>>(
+            future: fetchHistoryItems(widget.userId),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(child: Text('No history available'));
+              } else {
+                return ListView(
+                  padding: EdgeInsets.only(top: screenHeight * 0.1),
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(50),
+                          topRight: Radius.circular(50),
+                        ),
                       ),
-                    ),
-                    padding: EdgeInsets.symmetric(
-                      vertical: screenHeight * 0.03,
-                      horizontal: screenWidth * 0.04,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Center(
-                            child: Text(
-                              'HISTORY',
-                              style: TextStyle(
-                                fontSize: screenHeight * 0.04,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                      padding: EdgeInsets.symmetric(
+                        vertical: screenHeight * 0.03,
+                        horizontal: screenWidth * 0.04,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Center(
+                              child: Text(
+                                'HISTORY',
+                                style: TextStyle(
+                                  fontSize: screenHeight * 0.04,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 20),
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: snapshot.data!.length,
-                          itemBuilder: (context, index) {
-                            HistoryItem item = snapshot.data![index];
-                            return _buildHistoryCard(
-                              context: context,
-                              airplaneImage: item.airplaneImage,
-                              modelName: item.modelName,
-                              staffName: item.staffId,
-                              configuredBy: item.configuredBy,
-                              borrowingDate: item.formattedBorrowingDate,
-                              returnDate: item.formattedReturnDate,
-                              requestBy: item.requestBy,
-                              requesterName: item.requesterName,
-                              actionButtonText: item.actionButtonText,
-                              actionButtonColor: item.actionColor,
-                            );
-                          },
-                        ),
-                      ],
+                          const SizedBox(height: 20),
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: snapshot.data!.length,
+                            itemBuilder: (context, index) {
+                              HistoryItem item = snapshot.data![index];
+                              return _buildHistoryCard(
+                                context: context,
+                                airplaneImage: item.airplaneImage,
+                                modelName: item.modelName,
+                                staffName: item.staffId,
+                                configuredBy: item.configuredBy,
+                                borrowingDate: item.formattedBorrowingDate,
+                                returnDate: item.formattedReturnDate,
+                                requestBy: item.requestBy,
+                                requesterName: item.requesterName,
+                                actionButtonText: item.actionButtonText,
+                                actionButtonColor: item.actionColor,
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              );
-            }
-          },
-        ),
-      ],
-    ),
-  );
-}
+                  ],
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildHistoryCard({
     required BuildContext context,
@@ -180,7 +176,8 @@ Widget build(BuildContext context) {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        _buildInfoRow(Icons.verified_user, 'Approved by', configuredBy),
+                        _buildInfoRow(
+                            Icons.verified_user, 'Approved by', configuredBy),
                         _buildInfoRow(Icons.person, 'Staff', staffName),
                       ],
                     ),
@@ -188,9 +185,10 @@ Widget build(BuildContext context) {
                 ],
               ),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'Borrower:',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               Text(requesterName),
               const SizedBox(height: 8),
@@ -238,7 +236,8 @@ Widget build(BuildContext context) {
       children: [
         Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
         const SizedBox(height: 4),
-        Text(date, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Text(date,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
       ],
     );
   }
