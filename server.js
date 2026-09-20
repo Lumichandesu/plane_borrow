@@ -1,3 +1,6 @@
+// Load .env when dotenv is installed. Wrapped so the app still starts without the package;
+// the JWT_SECRET check below is what actually enforces configuration.
+try { require('dotenv').config(); } catch (e) { /* dotenv optional */ }
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -19,20 +22,39 @@ function authenticateToken(req, res, next) {
 
   if (!token) return res.status(401).json({ message: 'No token provided' });
 
-  jwt.verify(token, 'secret_key', (err, user) => { // ใช้ 'secret_key' ที่คุณตั้งไว้ตอนสร้าง token
+  jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) return res.status(403).json({ message: 'Invalid token' });
     req.user = user;
     next(); // ผ่านการยืนยัน ไปยังเส้นทางที่ร้องขอ
   });
 }
 
+// ---------------------------------------------------------------------------
+// Configuration comes from the environment, not from this file.
+//
+// This file is tracked in git and the repository has a public remote, so the JWT signing secret
+// that used to be the literal string 'secret_key' was readable by anyone who opened it - and a
+// readable signing secret means anyone can mint a token for any user, including an admin. Rotate
+// it: the old value must be treated as compromised.
+//
+// There is deliberately NO fallback default. A default would let the app boot with a known secret
+// and quietly recreate the same hole.
+// ---------------------------------------------------------------------------
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('JWT_SECRET is not set. Copy .env.example to .env and set a long random value.');
+  process.exit(1);
+}
+
+const DB_CONFIG = {
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'plane_borrow',
+};
+
 // Create a MySQL connection
-const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'plane_borrow'
-});
+const db = mysql.createConnection(DB_CONFIG);
 
 // Connect to the database
 db.connect((err) => {
@@ -133,7 +155,7 @@ app.post('/login', (req, res) => {
     }
 
     // สร้าง JWT token
-    const token = jwt.sign({ id: user.id, role_id: user.role_id }, 'secret_key', { expiresIn: '1h' });
+    const token = jwt.sign({ id: user.id, role_id: user.role_id }, JWT_SECRET, { expiresIn: '1h' });
     res.status(200).json({ id: user.id, username: user.username, role_id: user.role_id, token });
   });
 });
