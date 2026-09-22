@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:plane_borrow/api_config.dart';
 
 class RequestStudent extends StatefulWidget {
   final String userId;
@@ -28,8 +30,13 @@ class _RequestStudentState extends State<RequestStudent>
     });
 
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token') ?? '';
       final response = await http.get(
-        Uri.parse('http://192.168.1.3:3000/RequestStudent/${widget.userId}'),
+        Uri.parse('${ApiConfig.baseUrl}/RequestStudent/${widget.userId}'),
+        headers: token.isNotEmpty
+            ? {'Authorization': 'Bearer $token'}
+            : {},
       );
 
       print('User ID for API request: ${widget.userId}');

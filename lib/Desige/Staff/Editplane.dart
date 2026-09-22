@@ -1,27 +1,57 @@
-import 'dart:io'; // For handling file paths
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart'; // For picking images
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:plane_borrow/api_config.dart';
 
 class EditPlane extends StatefulWidget {
-  const EditPlane({super.key});
+  final String planeId;
+  final String currentImage;
+  final Map<String, dynamic> planeData;
+
+  const EditPlane({
+    super.key,
+    required this.planeId,
+    required this.currentImage,
+    required this.planeData,
+  });
 
   @override
   _EditPlaneState createState() => _EditPlaneState();
 }
 
 class _EditPlaneState extends State<EditPlane> {
-  final TextEditingController _planeNameController =
-      TextEditingController(text: "Diamond DA40");
-  final TextEditingController _seatsController =
-      TextEditingController(text: "4 Seats");
-  final TextEditingController _tailNumberController =
-      TextEditingController(text: "N12345");
-  final TextEditingController _descriptionController = TextEditingController(
-      text:
-          "The cockpit is glass-panel equipped with avionics like the Garmin G1000 system (in most configurations), providing navigation, autopilot, and flight management systems. This makes the aircraft easy to fly and enhances situational awareness for the pilot.");
+  late TextEditingController _planeNameController;
+  late TextEditingController _seatsController;
+  late TextEditingController _tailNumberController;
+  late TextEditingController _descriptionController;
+  late TextEditingController _categoryController;
+  late bool _isAvailable;
 
-  File? _imageFile; // To hold the selected image
-  bool _isAvailable = true; // Track the availability status
+  @override
+  void initState() {
+    super.initState();
+    _planeNameController =
+        TextEditingController(text: widget.planeData['planeName'] ?? '');
+    _seatsController =
+        TextEditingController(text: widget.planeData['seat']?.toString() ?? '');
+    _tailNumberController =
+        TextEditingController(text: widget.planeData['tailNumber'] ?? '');
+    _descriptionController =
+        TextEditingController(text: widget.planeData['planeDescription'] ?? '');
+    _categoryController =
+        TextEditingController(text: widget.planeData['category'] ?? '');
+    _isAvailable = (widget.planeData['status'] == 1);
+  }
+
+  @override
+  void dispose() {
+    _planeNameController.dispose();
+    _seatsController.dispose();
+    _tailNumberController.dispose();
+    _descriptionController.dispose();
+    _categoryController.dispose();
+    super.dispose();
+  }
 
   // Function to handle editing text
   void _editTextField(String field, TextEditingController controller) {
@@ -56,17 +86,39 @@ class _EditPlaneState extends State<EditPlane> {
     );
   }
 
-  // Function to pick image from the gallery
-  Future<void> _pickImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile =
-        await picker.pickImage(source: ImageSource.gallery);
+  Future<void> _savePlane() async {
+    final Map<String, dynamic> updatedData = {
+      'planeName': _planeNameController.text,
+      'planeTitle': widget.planeData['planeTitle'] ?? 'General Aviation',
+      'status': _isAvailable ? 1 : 0,
+      'category': _categoryController.text,
+      'seat': _seatsController.text,
+      'planeDescription': _descriptionController.text,
+      'tailNumber': _tailNumberController.text,
+      'image': widget.currentImage,
+    };
 
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile =
-            File(pickedFile.path); // Update the image with the selected file
-      });
+    try {
+      final response = await http.put(
+        Uri.parse('${ApiConfig.baseUrl}/updateplane/${widget.planeId}'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(updatedData),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Plane updated successfully')),
+        );
+        Navigator.pop(context, true); // Return true to indicate update
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update: ${response.body}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
     }
   }
 
@@ -82,8 +134,7 @@ class _EditPlaneState extends State<EditPlane> {
             TextButton(
               onPressed: () {
                 Navigator.pop(context); // Close the dialog
-                // Handle the save action here
-                // For example, you can add logic to save the data or perform actions
+                _savePlane(); // Actually call the API
               },
               child: const Text('Yes'),
             ),
@@ -161,28 +212,18 @@ class _EditPlaneState extends State<EditPlane> {
                         style: TextStyle(fontSize: 30, color: Colors.black),
                       ),
                     ),
-                    // Display the current image or a default image
-                    _imageFile != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Image.file(
-                              _imageFile!,
-                              height: 200,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                            ),
-                          )
-                        : Image.asset(
-                            "assets/images/Diamond DA40.png", // Default image if no image is picked
-                            fit: BoxFit.cover,
-                            height: 200,
-                            width: double.infinity,
-                          ),
-                    const SizedBox(height: 16),
-                    // Button to change the image
-                    ElevatedButton(
-                      onPressed: _pickImage, // Trigger the image picker
-                      child: const Text('Change Image'),
+                    // Display the current image
+                    Image.asset(
+                      'assets/images/${widget.currentImage}',
+                      fit: BoxFit.cover,
+                      height: 200,
+                      width: double.infinity,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const SizedBox(
+                          height: 200,
+                          child: Center(child: Icon(Icons.image_not_supported, size: 60)),
+                        );
+                      },
                     ),
                     const SizedBox(height: 16),
                     // Editable Plane Name
@@ -196,9 +237,14 @@ class _EditPlaneState extends State<EditPlane> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'General Aviation', // Static text for category
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    GestureDetector(
+                      onTap: () =>
+                          _editTextField('Category', _categoryController),
+                      child: Text(
+                        _categoryController.text,
+                        style:
+                            const TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     // Row with Seats and Tail Number

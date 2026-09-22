@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:plane_borrow/api_config.dart';
 
 class HistoryStudent3 extends StatefulWidget {
   final String userId; // เพิ่มตัวแปร userId
@@ -15,7 +16,7 @@ class HistoryStudent3 extends StatefulWidget {
 class _HistoryStudent3State extends State<HistoryStudent3> {
   Future<List<HistoryItem>> fetchHistoryItems(String userId) async {
     final response = await http.post(
-        Uri.parse('http://192.168.1.3:3000/HistoryStudent/${widget.userId}'));
+        Uri.parse('${ApiConfig.baseUrl}/HistoryStudent/${widget.userId}'));
     print('User ID for API request: ${widget.userId}');
 
     if (response.statusCode == 200) {

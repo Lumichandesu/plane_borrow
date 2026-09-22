@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:plane_borrow/api_config.dart';
 
 class HistoryStaff extends StatefulWidget {
+  final String? userId;
   const HistoryStaff({
     super.key,
+    this.userId,
   });
 
   @override
@@ -15,7 +18,7 @@ class HistoryStaff extends StatefulWidget {
 class _HistoryStaffState extends State<HistoryStaff> {
   Future<List<HistoryItem>> fetchHistoryItems() async {
     final response =
-        await http.post(Uri.parse('http://localhost:3000/HistoryStaff'));
+        await http.post(Uri.parse('${ApiConfig.baseUrl}/HistoryStaff'));
 
     if (response.statusCode == 200) {
       // Parse the response body as a Map

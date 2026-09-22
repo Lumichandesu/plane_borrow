@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:plane_borrow/api_config.dart';
 
 class AddPlane extends StatefulWidget {
   const AddPlane({super.key});
@@ -40,7 +41,7 @@ class _AddPlaneState extends State<AddPlane> {
       'image': _imageController.text,
     };
 
-    const String apiUrl = 'http://192.168.1.5:3000/addplane';
+    const String apiUrl = '${ApiConfig.baseUrl}/addplane';
 
     try {
       final response = await http.post(

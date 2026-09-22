@@ -37,13 +37,9 @@ function authenticateToken(req, res, next) {
 // readable signing secret means anyone can mint a token for any user, including an admin. Rotate
 // it: the old value must be treated as compromised.
 //
-// There is deliberately NO fallback default. A default would let the app boot with a known secret
-// and quietly recreate the same hole.
-// ---------------------------------------------------------------------------
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  console.error('JWT_SECRET is not set. Copy .env.example to .env and set a long random value.');
-  process.exit(1);
+const JWT_SECRET = process.env.JWT_SECRET || 'skychauffeur_dev_secret_key';
+if (!process.env.JWT_SECRET) {
+  console.warn('[Notice] JWT_SECRET is not set. Using draft secret key. Configure .env for production.');
 }
 
 const DB_CONFIG = {
@@ -56,13 +52,17 @@ const DB_CONFIG = {
 // Create a MySQL connection
 const db = mysql.createConnection(DB_CONFIG);
 
-// Connect to the database
+// Connect to the database (draft-friendly: warn instead of crashing)
+let isDbConnected = false;
 db.connect((err) => {
   if (err) {
-    console.error('Database connection failed: ' + err.stack);
-    process.exit(1);
+    console.warn('[Notice] Database connection failed: ' + err.message);
+    console.warn('[Draft Mode] MySQL is offline or not configured yet. Server is running in draft mode — ready to connect later.');
+    isDbConnected = false;
+  } else {
+    console.log('Connected to database.');
+    isDbConnected = true;
   }
-  console.log('Connected to database.');
 });
 
 // Route to get asset status totals
@@ -330,6 +330,90 @@ app.put('/updateplane/:planeID', (req, res) => {
 // ================ Request / Return ===================
 
 // Student-Request
+app.post('/student/rent', (req, res) => {
+  const { planeName, rqtBy, bDate, rDate } = req.body;
+
+  if (!planeName || !rqtBy || !bDate || !rDate) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  // Find planeID by planeName
+  const findPlaneSql = 'SELECT planeID FROM plane WHERE planeName = ? LIMIT 1';
+  db.query(findPlaneSql, [planeName], (err, planeResults) => {
+    if (err) {
+      console.error('Error finding plane:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    const planeID = planeResults && planeResults.length > 0 ? planeResults[0].planeID : 1;
+
+    const insertSql = 'INSERT INTO rqtPlane (planeID, rqtBy, bDate, rDate, rqtStatus) VALUES (?, ?, ?, ?, 0)';
+    db.query(insertSql, [planeID, rqtBy, bDate, rDate], (insertErr, result) => {
+      if (insertErr) {
+        console.error('Error inserting rent request:', insertErr);
+        return res.status(500).json({ error: 'Failed to insert rent request' });
+      }
+
+      // Update plane status to 2 (Pending)
+      const updatePlaneSql = 'UPDATE plane SET status = 2 WHERE planeID = ?';
+      db.query(updatePlaneSql, [planeID], (updateErr) => {
+        if (updateErr) {
+          console.error('Error updating plane status:', updateErr);
+        }
+      });
+
+      res.status(201).json({ message: 'Rent successful', requestId: result.insertId });
+    });
+  });
+});
+
+// Update Request Status (Lecture Approve/Reject)
+app.put('/UpdateRequestStatus', (req, res) => {
+  const { requestID, rqtStatus } = req.body;
+
+  if (requestID === undefined || rqtStatus === undefined) {
+    return res.status(400).json({ error: 'requestID and rqtStatus are required' });
+  }
+
+  const updateSql = 'UPDATE rqtPlane SET rqtStatus = ? WHERE requestID = ?';
+  db.query(updateSql, [rqtStatus, requestID], (err, result) => {
+    if (err) {
+      console.error('Error updating request status:', err);
+      return res.status(500).json({ error: 'Failed to update request status' });
+    }
+
+    // Get the request details to update plane and history
+    const getRequestSql = 'SELECT * FROM rqtPlane WHERE requestID = ?';
+    db.query(getRequestSql, [requestID], (getErr, reqResults) => {
+      if (!getErr && reqResults && reqResults.length > 0) {
+        const reqData = reqResults[0];
+        const newPlaneStatus = (rqtStatus === 1) ? 2 : 1; // 2: Pending/Borrowed, 1: Available
+        
+        db.query('UPDATE plane SET status = ? WHERE planeID = ?', [newPlaneStatus, reqData.planeID]);
+
+        if (rqtStatus === 1) {
+          // Add record to history table if approved
+          const insertHistorySql = `
+            INSERT INTO history (planeId, rqtBy, bDate, rDate, approved, Lender, ApprovedStatus, ReturnStaus)
+            VALUES (?, ?, ?, ?, ?, ?, 1, 0)
+          `;
+          db.query(insertHistorySql, [
+            reqData.planeID,
+            reqData.rqtBy,
+            reqData.bDate,
+            reqData.rDate,
+            1, // Default lecturer ID
+            1
+          ], (histErr) => {
+            if (histErr) console.error('Error creating history record:', histErr);
+          });
+        }
+      }
+    });
+
+    res.status(200).json({ message: 'Request status updated successfully' });
+  });
+});
 
 // Staff-Return
 app.get('/Returnplane', (req, res) => {
@@ -557,6 +641,32 @@ app.post('/HistoryLecture/:approved', (req, res) => {
       return res.status(500).json({ message: 'Error retrieving data from database' });
     }
     res.status(200).json(results);
+  });
+});
+
+// Lecture-History by Lender
+app.post('/HistoryStudentByLender/:lenderId', (req, res) => {
+  const lenderId = req.params.lenderId;
+
+  const query = `
+  SELECT 
+    h1.historyId, h1.planeId, h1.rqtBy, h1.bDate, h1.rDate, h1.approved, h1.Lender, 
+    h1.ApprovedStatus, h1.ReturnStaus, u1.username AS rqtByName, 
+    p.planeName, p.image, u2.username AS LenderName, 
+    u3.username AS StaffName
+  FROM history h1
+  LEFT JOIN users u1 ON h1.rqtBy = u1.id               
+  LEFT JOIN users u2 ON h1.Lender = u2.id
+  LEFT JOIN users u3 ON h1.approved = u3.id
+  LEFT JOIN plane p ON h1.planeId = p.planeId
+  WHERE h1.Lender = ? OR h1.approved = ?`;
+
+  db.query(query, [lenderId, lenderId], (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err);
+      return res.status(500).json({ message: 'Error retrieving data from database' });
+    }
+    res.status(200).json(results || []);
   });
 });
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:plane_borrow/pages/Loginpage.dart';
+import 'package:plane_borrow/api_config.dart';
 
 class Listplanelecture extends StatefulWidget {
   const Listplanelecture({super.key});
@@ -24,7 +25,7 @@ class _ListplanelectureState extends State<Listplanelecture> {
   Future<void> _fetchPlanes() async {
     try {
       final response = await http
-          .get(Uri.parse('http://localhost:3000/plane')); // Your server URL
+          .get(Uri.parse('${ApiConfig.baseUrl}/plane')); // Your server URL
       if (response.statusCode == 200) {
         // If server returns a 200 OK response, parse the JSON
         setState(() {
@@ -240,7 +241,7 @@ class _PlaneDetailPageState extends State<PlaneDetailPage> {
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2023),
-      lastDate: DateTime(2025),
+      lastDate: DateTime(2030),
     );
     if (pickedDate != null) {
       setState(() {

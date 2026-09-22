@@ -3,7 +3,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'AddPlane.dart';
 import 'package:plane_borrow/pages/Loginpage.dart';
-import 'EditPlane.dart';
+import 'Editplane.dart';
+import 'package:plane_borrow/api_config.dart';
 
 class ListplaneStaff extends StatefulWidget {
   const ListplaneStaff({super.key});
@@ -25,7 +26,7 @@ class _ListPlaneState extends State<ListplaneStaff> {
   Future<void> _fetchPlanes() async {
     try {
       final response =
-          await http.get(Uri.parse('http://192.168.1.5:3000/plane'));
+          await http.get(Uri.parse('${ApiConfig.baseUrl}/plane'));
       if (response.statusCode == 200) {
         setState(() {
           planes = jsonDecode(response.body);
@@ -67,7 +68,7 @@ class _ListPlaneState extends State<ListplaneStaff> {
     if (confirmed == true) {
       try {
         final response = await http.delete(
-          Uri.parse('http://192.168.1.5:3000/plane/$planeId'),
+          Uri.parse('${ApiConfig.baseUrl}/plane/$planeId'),
         );
 
         if (response.statusCode == 200) {

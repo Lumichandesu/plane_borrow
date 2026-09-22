@@ -58,7 +58,7 @@ class _AppbarstudentState extends State<HomeLecture> {
         body: TabBarView(
           children: [
             const Listplanelecture(),
-            const Requestlistlecture(),
+            const RequestLecture(),
             const DashboardLecture(),
             HistoryLecture(userId: widget.userId),
           ],

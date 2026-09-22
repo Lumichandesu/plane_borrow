@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http; // Import HTTP package
 import 'dart:convert'; // For JSON encoding/decoding
 import 'Loginpage.dart';
+import 'package:plane_borrow/api_config.dart';
 
 class Register extends StatefulWidget {
   const Register({super.key});
@@ -32,7 +33,7 @@ class _RegisterState extends State<Register> {
 
     // Create the registration request
     final response = await http.post(
-      Uri.parse('http://localhost:3000/register'), // Update this URL if necessary
+      Uri.parse('${ApiConfig.baseUrl}/register'), // Update this URL if necessary
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },

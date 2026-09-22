@@ -6,6 +6,7 @@ import 'package:plane_borrow/Desige/Staff/Home_Staff.dart';
 import 'package:plane_borrow/Desige/lecture/Home_lecture.dart';
 import 'Register.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:plane_borrow/api_config.dart';
 
 class Loginpage extends StatefulWidget {
   const Loginpage({super.key});
@@ -36,7 +37,7 @@ class _LoginpageState extends State<Loginpage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:3000/login'), 
+        Uri.parse('${ApiConfig.baseUrl}/login'), 
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -52,6 +53,9 @@ class _LoginpageState extends State<Loginpage> {
         if (user['token'] != null) {
           SharedPreferences prefs = await SharedPreferences.getInstance();
           await prefs.setString('auth_token', user['token']);
+          if (user['id'] != null) {
+            await prefs.setString('user_id', user['id'].toString());
+          }
         }
 
         print(user); 

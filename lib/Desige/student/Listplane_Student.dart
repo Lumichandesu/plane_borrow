@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:plane_borrow/pages/Loginpage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:plane_borrow/api_config.dart';
 
 class ListplaneStudent extends StatefulWidget {
   const ListplaneStudent({super.key});
@@ -25,7 +26,7 @@ class _ListplaneStudentState extends State<ListplaneStudent> {
   Future<void> _fetchPlanes() async {
     try {
       final response =
-          await http.get(Uri.parse('http://192.168.1.3:3000/plane'));
+          await http.get(Uri.parse('${ApiConfig.baseUrl}/plane'));
       if (response.statusCode == 200) {
         setState(() {
           planes = jsonDecode(response.body);
@@ -315,7 +316,7 @@ class _PlaneDetailStudentPageState extends State<PlaneDetailStudentPage> {
       firstDate: isBorrowDate
           ? DateTime.now()
           : borrowDate!.add(const Duration(days: 1)),
-      lastDate: DateTime(2025),
+      lastDate: DateTime(2030),
     );
     if (pickedDate != null) {
       setState(() {
@@ -349,7 +350,7 @@ class _PlaneDetailStudentPageState extends State<PlaneDetailStudentPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.1.3:3000/student/rent'), // API Endpoint
+        Uri.parse('${ApiConfig.baseUrl}/student/rent'), // API Endpoint
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'planeName': widget.planeName,

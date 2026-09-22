@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:plane_borrow/api_config.dart';
 
 class ReturnStaff extends StatefulWidget {
   const ReturnStaff({super.key});
@@ -21,7 +22,7 @@ class _ReturnStaffState extends State<ReturnStaff> {
   Future<List<ReturnItem>> fetchReturnItems() async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/Returnplane'),
+        Uri.parse('${ApiConfig.baseUrl}/Returnplane'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -255,7 +256,7 @@ Future<void> updateReturnStatus(
     BuildContext context, int rqtBy, int planeID) async {
   try {
     final response = await http.put(
-      Uri.parse('http://localhost:3000/UpdateReturnStatus/$rqtBy'),
+      Uri.parse('${ApiConfig.baseUrl}/UpdateReturnStatus/$rqtBy'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'status': 1, // อัปเดต ReturnStaus เป็น 1

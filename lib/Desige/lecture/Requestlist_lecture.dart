@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:plane_borrow/api_config.dart';
 
 class RequestLecture extends StatefulWidget {
   const RequestLecture({super.key});
@@ -29,7 +30,7 @@ class _RequestLectureState extends State<RequestLecture>
 
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.3:3000/RequestLecture'),
+        Uri.parse('${ApiConfig.baseUrl}/RequestLecture'),
       );
 
       if (response.statusCode == 200) {
@@ -133,7 +134,7 @@ class _RequestLectureState extends State<RequestLecture>
 
     try {
       final response = await http.put(
-        Uri.parse('http://192.168.1.3:3000/UpdateRequestStatus'),
+        Uri.parse('${ApiConfig.baseUrl}/UpdateRequestStatus'),
         body: json.encode({
           'requestID': requestID,
           'rqtStatus': rqtStatus,

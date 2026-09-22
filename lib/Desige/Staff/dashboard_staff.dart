@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:plane_borrow/api_config.dart';
 
 class DashboardStaff extends StatefulWidget {
   const DashboardStaff({super.key});
@@ -21,20 +22,23 @@ class _DashboardStaffState extends State<DashboardStaff> {
   }
 
   Future<void> _fetchAssetTotals() async {
-    // Make sure to use your local IP address if needed
-    final response = await http.get(Uri.parse('http://localhost:3000/asset-status'));
+    try {
+      final response = await http.get(Uri.parse('${ApiConfig.baseUrl}/asset-status'));
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      print('Fetched data: $data');  // Log the fetched data
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print('Fetched data: $data');  // Log the fetched data
 
-      setState(() {
-        borrowedCount = int.parse(data['borrowed_assets'] ?? '0'); // Ensure it's an integer
-        availableCount = int.parse(data['available_assets'] ?? '0'); // Ensure it's an integer
-        disabledCount = int.parse(data['disabled_assets'] ?? '0'); // Ensure it's an integer
-      });
-    } else {
-      print('Failed to fetch asset totals: ${response.statusCode}'); // Log status code
+        setState(() {
+          borrowedCount = int.tryParse(data['borrowed_assets']?.toString() ?? '0') ?? 0;
+          availableCount = int.tryParse(data['available_assets']?.toString() ?? '0') ?? 0;
+          disabledCount = int.tryParse(data['disabled_assets']?.toString() ?? '0') ?? 0;
+        });
+      } else {
+        print('Failed to fetch asset totals: ${response.statusCode}'); // Log status code
+      }
+    } catch (e) {
+      print('Error fetching asset totals: $e');
     }
   }
 
