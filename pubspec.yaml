@@ -14,7 +14,7 @@ dependencies:
   cupertino_icons: ^1.0.6
   image_picker: ^0.8.5+4
   http: ^0.13.6
-  shared_preferences: ^2.0.15  # Added dependency for shared_preferences
+  shared_preferences: ^2.5.5
   
   
 dev_dependencies:

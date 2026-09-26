@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SkyChauffeur - ระบบจัดการและยืม-คืนเครื่องบิน (Airplane Borrowing & Fleet Management System) สำหรับการฝึกบินและการบริหารจัดการอากาศยาน">
+  <title>SkyChauffeur - Airplane Borrow & Fleet Management System</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="assets/images/airplane.jpg">
+</head>
+<body>
+
+  <!-- Top Aerospace Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-section">
+        <div class="brand-logo-icon">
+          <!-- Jet SVG -->
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">
+            SkyChauffeur
+            <span class="brand-tag">Aviation Fleet</span>
+          </div>
+          <div class="brand-subtitle">Airplane Borrow & Fleet Management System</div>
+        </div>
+      </div>
+
+      <!-- Quick Role Switcher -->
+      <nav class="role-switcher-container" aria-label="Role Switcher">
+        <button class="role-tab-btn active" data-role="1" title="สลับเป็นโหมดนักศึกษา">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          Student (นักศึกษา)
+        </button>
+        <button class="role-tab-btn" data-role="3" title="สลับเป็นโหมดอาจารย์ผู้อนุมัติ">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Lecturer (อาจารย์)
+        </button>
+        <button class="role-tab-btn" data-role="2" title="สลับเป็นโหมดเจ้าหน้าที่ดูแลเครื่อง">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          Staff (เจ้าหน้าที่)
+        </button>
+      </nav>
+
+      <div class="header-actions">
+        <button id="resetMockBtn" class="btn-secondary-dark" title="คืนค่าข้อมูลตัวอย่างตั้งต้น">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+          รีเซ็ตข้อมูล Mock
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sub-Nav & Role Profile -->
+  <section class="sub-nav">
+    <div class="sub-nav-container">
+      <div class="current-user-info">
+        <div id="headerUserAvatar" class="user-avatar">ST</div>
+        <div>
+          <div id="headerUserName" class="user-meta-name">สมชาย ใจดี</div>
+          <div id="headerUserRole" class="user-meta-role">Student (นักศึกษา)</div>
+        </div>
+      </div>
+
+      <nav id="navLinksGroup" class="nav-links-group" aria-label="Section Navigation">
+        <!-- Rendered dynamically by app.js based on selected role -->
+      </nav>
+    </div>
+  </section>
+
+  <!-- Dynamic Content Area -->
+  <main id="mainContentArea" class="main-content">
+    <!-- Populated by app.js -->
+  </main>
+
+  <!-- Modal: Request to Borrow Aircraft -->
+  <div id="borrowModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="borrowModalTitle">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h2 id="borrowModalTitle">ส่งคำขอยืมเครื่องบิน (Borrow Request)</h2>
+        <button class="modal-close-btn" aria-label="Close modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div id="borrowModalBody" class="modal-body">
+        <!-- Form rendered by app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Plane Detail Viewer -->
+  <div id="planeDetailModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="planeDetailTitle">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h2 id="planeDetailTitle">ข้อมูลอากาศยาน (Aircraft Specifications)</h2>
+        <button class="modal-close-btn" aria-label="Close modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div id="planeDetailModalBody" class="modal-body">
+        <!-- Details rendered by app.js -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="window.app.closeAllModals()">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Plane Form -->
+  <div id="planeFormModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="planeFormModalTitle">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h2 id="planeFormModalTitle">จัดการข้อมูลเครื่องบิน</h2>
+        <button class="modal-close-btn" aria-label="Close modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div id="planeFormModalBody" class="modal-body">
+        <!-- Form rendered by app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Stack -->
+  <aside id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></aside>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <div>
+        <strong>SkyChauffeur</strong> — ระบบบริหารจัดการและยืม-คืนเครื่องบิน (Flight Training & Private Aviation)
+      </div>
+      <div>
+        โหมดจำลองสถานการณ์ (Stand-alone Mock Demo) • ไม่ต้องพึ่งพา Database หรือ Backend Server
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
